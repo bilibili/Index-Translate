@@ -12,6 +12,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 BENCHMARK_DIR = Path(__file__).resolve().parent
 from eval.judge_client import (  # noqa: E402
@@ -28,6 +29,22 @@ from eval.prompts import (  # noqa: E402
 from eval.score_parser import parse_score  # noqa: E402
 
 EXPECTED_CASES = 3638
+
+
+def redact_base_url(base_url: str) -> str:
+    """Publish endpoint identity without credentials, paths or URL parameters."""
+    try:
+        parsed = urlsplit(base_url)
+        host = parsed.hostname
+        if not parsed.scheme or not host:
+            return "<redacted>"
+        if ":" in host:
+            host = f"[{host}]"
+        if parsed.port is not None:
+            host += f":{parsed.port}"
+        return f"{parsed.scheme}://{host}"
+    except ValueError:
+        return "<redacted>"
 
 
 def read_json(path: Path) -> Any:
@@ -265,7 +282,7 @@ def main() -> int:
         "run_state": run_state,
         "judge": {
             "model": args.judge_model,
-            "base_url": args.judge_base_url,
+            "base_url": redact_base_url(args.judge_base_url),
             "prompt_version": JUDGE_PROMPT_VERSION,
             "temperature": JUDGE_TEMPERATURE,
             "max_tokens": JUDGE_MAX_TOKENS,

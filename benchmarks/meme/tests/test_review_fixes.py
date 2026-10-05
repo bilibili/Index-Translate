@@ -427,5 +427,43 @@ class MirrorFileCase(unittest.TestCase):
         self.assertIn("eval/score_parser.py", results)
 
 
+class EndpointRedactionCase(unittest.TestCase):
+    def test_url_components_do_not_expose_credentials(self):
+        for url, expected in (
+            ("https://user:REVIEW_TOKEN@example.test/v1", "https://example.test"),
+            ("https://example.test?token=REVIEW_TOKEN", "https://example.test"),
+            ("https://example.test#REVIEW_TOKEN", "https://example.test"),
+            ("http://user:REVIEW_TOKEN@[::1]:8080/v1", "http://[::1]:8080"),
+            ("https://example.test:REVIEW_TOKEN/v1", "<redacted>"),
+        ):
+            with self.subTest(url=url):
+                self.assertEqual(evaluate.redact_base_url(url), expected)
+
+    def test_published_summary_is_redacted_but_client_receives_original_url(self):
+        with tempfile.TemporaryDirectory() as raw:
+            directory = Path(raw)
+            cases = write_case_data(directory / "data", 1)
+            predictions = directory / "predictions.jsonl"
+            write_predictions(predictions, cases)
+            endpoint = "https://user:REVIEW_TOKEN@example.test/v1?key=REVIEW_TOKEN"
+            client = types.SimpleNamespace(
+                complete=lambda prompt: ("评分：1", False), cache_entries=0,
+            )
+            argv = ["evaluate.py", "--data-dir", str(directory / "data"),
+                    "--predictions", str(predictions), "--output-dir", str(directory / "out"),
+                    "--limit", "1", "--judge-base-url", endpoint]
+            with mock.patch.object(sys, "argv", argv), \
+                    mock.patch.object(evaluate, "JudgeClient", return_value=client) as factory, \
+                    mock.patch.dict(evaluate.os.environ, {"JUDGE_API_KEY": "test"}), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(evaluate.main(), 0)
+            self.assertEqual(factory.call_args.kwargs["base_url"], endpoint)
+            for filename in ("eval_summary.json", "eval_results.json"):
+                text = (directory / "out" / filename).read_text(encoding="utf-8")
+                self.assertNotIn("REVIEW_TOKEN", text)
+            summary = json.loads((directory / "out" / "eval_summary.json").read_text())
+            self.assertEqual(summary["judge"]["base_url"], "https://example.test")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
