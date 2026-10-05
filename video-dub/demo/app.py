@@ -230,14 +230,14 @@ def run_pipeline(job):
              result={"case_id": case_id, "video": meta["video"]})
         _log(job, f"done: {out_mp4}")
 
-        # drop the per-job scratch dir (audio16k.wav, demucs stems, segs/, ...):
-        # the final artefacts live one level up, in results/<case_id>/, and are
-        # what job["result"]["video"] points at — never touched here.
-        shutil.rmtree(tmp, ignore_errors=True)
     except Exception as e:
         traceback.print_exc()
         _set(job, status="error", step_label="失败", error=str(e))
         _log(job, f"ERROR: {e}")
+    finally:
+        # Every finished job releases scratch files, including failed jobs.
+        # Final artefacts are siblings of work/ and remain available.
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
 def create_app(s2st_url):

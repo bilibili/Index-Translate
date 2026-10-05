@@ -225,6 +225,48 @@ def test_app_pipeline(tmp):
          app_mod.RESULT_DIR) = orig
 
 
+def test_app_failure_cleanup(tmp):
+    print("[2b] demo/app.py: failed jobs release scratch files")
+    import demo.app as app_mod
+    from index_dub import media, segment, s2st, timeline
+
+    orig = (media.extract_audio, media.extract_segment, media.probe_duration,
+            media.mux_video_audio, segment.segment_audio, s2st.S2STClient,
+            timeline.build_track)
+    try:
+        for stage in ("extract", "assemble"):
+            _patch_app_pipeline(app_mod, {})
+            rdir = os.path.join(tmp, f"failed-{stage}")
+            workdir = os.path.join(rdir, "work")
+            os.makedirs(workdir, exist_ok=True)
+            with open(os.path.join(workdir, "scratch.wav"), "wb") as f:
+                f.write(b"scratch")
+            sibling = os.path.join(rdir, "preserved.txt")
+            with open(sibling, "w") as f:
+                f.write("keep")
+            if stage == "extract":
+                def fail_extract(*args, **kwargs):
+                    raise RuntimeError("simulated extraction failure")
+                media.extract_audio = fail_extract
+            else:
+                def fail_assemble(*args, **kwargs):
+                    raise RuntimeError("simulated assembly failure")
+                timeline.build_track = fail_assemble
+            job = {"id": f"failed-{stage}", "filename": "sample.mp4", "lang": "en",
+                   "separate": False, "workers": 2, "s2st_url": "http://127.0.0.1:1",
+                   "upload": "stub.mp4", "workdir": workdir, "status": "running",
+                   "log": app_mod.collections.deque(maxlen=200)}
+            with contextlib.redirect_stderr(io.StringIO()):
+                app_mod.run_pipeline(job)
+            check(f"{stage} failure is recorded", job["status"] == "error")
+            check(f"{stage} failure cleans work dir", not os.path.exists(workdir))
+            check(f"{stage} failure preserves siblings", os.path.exists(sibling))
+    finally:
+        (media.extract_audio, media.extract_segment, media.probe_duration,
+         media.mux_video_audio, segment.segment_audio, s2st.S2STClient,
+         timeline.build_track) = orig
+
+
 def test_dub_video_tempdir_and_cli(tmp):
     print("[3] dub_video.py: temp dir lifecycle + --max-seg validation")
     import dub_video
@@ -438,6 +480,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix="videodub-verify-") as tmp:
         test_registry_concurrency(tmp)
         test_app_pipeline(tmp)
+        test_app_failure_cleanup(tmp)
         test_dub_video_tempdir_and_cli(tmp)
         test_segment_max_dur_guard(tmp)
         test_serve_s2st(tmp)
