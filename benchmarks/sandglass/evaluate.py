@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import statistics
 import time
+from urllib.parse import urlsplit
 import syllable_calculation as sc
 from judge_prompt import JUDGE_PROMPT, LANG_CN
 
@@ -36,9 +37,18 @@ def redact_api_base(api_base):
     """summary 会随发布物公开：只保留 scheme+host，去掉 userinfo/路径/查询。"""
     if not api_base:
         return ''
-    scheme, _, rest = api_base.partition('://')
-    host = rest.split('/')[0].split('@')[-1] if rest else ''
-    return f'{scheme}://{host}' if host else '<redacted>'
+    try:
+        parsed = urlsplit(api_base)
+        host = parsed.hostname
+        if not parsed.scheme or not host:
+            return '<redacted>'
+        if ':' in host:
+            host = f'[{host}]'
+        if parsed.port is not None:
+            host += f':{parsed.port}'
+        return f'{parsed.scheme}://{host}'
+    except ValueError:
+        return '<redacted>'
 
 
 def parse_score(text):
