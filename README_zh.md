@@ -110,9 +110,9 @@ curl https://index-translate.bilibili.com/v1/responses \
 ```
 
 > [!TIP]
-> 🌐 **想要在浏览器一键双语畅读网页？沉浸式翻译 (Immersive Translate) 开箱即用！**
-> 针对浏览器插件特有的跨域保护 (CORS)、WAF 协议头以及大模型思维链 (CoT) 抑制需求，官方提供零配置本地桥接代理。
-> 👉 **[【图文配置教程】沉浸式翻译对接 Index-Translate 完整指南（附高清实操截图与参数避坑）](docs/immersive_translate_zh.md)**
+> 🌐 **想要在浏览器一键双语畅读网页？沉浸式翻译 (Immersive Translate) 开箱即用（支持 Windows / macOS / Linux）！**
+> 针对浏览器插件特有的跨域保护 (CORS)、WAF 协议头以及大模型思维链 (CoT) 抑制需求，官方提供零配置本地桥接代理（Windows 用户可直接双击运行根目录 `run_proxy_windows.bat`）。
+> 👉 **[【图文配置教程】沉浸式翻译对接 Index-Translate 完整指南（Windows / macOS / Linux，附实操截图与避坑）](docs/immersive_translate_zh.md)**
 
 #### 方式二：本地私有化部署（vLLM）
 
@@ -351,7 +351,7 @@ NAtIveLong 不包含小说原文或参考译文；BWB 需自行获取官方语�
 
 ## 应用工具
 
-- **[沉浸式翻译配置教程](docs/immersive_translate_zh.md)：** 图文教程，通过公网 35B 免费 API 或本地模型为「沉浸式翻译 (Immersive Translate)」插件提供高品质网页双语对照翻译。
+- **[沉浸式翻译配置教程](docs/immersive_translate_zh.md)：** 图文教程，支持 Windows（提供一键 `.bat` 启动脚本）/ macOS / Linux，通过公网 35B 免费 API 或本地模型为「沉浸式翻译 (Immersive Translate)」插件提供高品质网页双语对照翻译。
 - **[内置浏览器扩展](extension/README_zh.md)：** 官方内置极简网页翻译插件，支持 Chrome、Edge 与 Firefox，纯原生 JS 零构建。
 - **[视频配音管线](video-dub/README_zh.md)：** 完成音频提取、人声分离、语音切分、翻译配音及时间轴对齐，输出配音视频。
 

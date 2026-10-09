@@ -37,7 +37,7 @@ Call the online **Index-Translate-35B-A3B** model without a local GPU using our 
 # Quick command-line translation (stdlib-only; supports -t language, --stream, -g glossary, --instruction)
 python call_api.py "你好，世界。" --target en
 
-# Local bridge proxy for browser extensions (e.g. Immersive Translate / 沉浸式翻译)
+# Local bridge proxy for browser extensions (Windows users can double-click run_proxy_windows.bat)
 python call_api.py --serve
 ```
 

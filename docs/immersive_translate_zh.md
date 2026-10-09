@@ -53,7 +53,28 @@
 
 #### 选项 A：使用免费公网 35B API（推荐，无需本地显卡）
 
-在终端中克隆仓库并运行零依赖代理服务：
+本代理为**零依赖**设计（仅使用 Python 3 标准库，无需 `pip install`）。
+
+##### 🪟 Windows 用户（三种任选）
+
+- **方法一：一键双击批处理（最推荐）**  
+  克隆或下载解压仓库后，在文件管理器中直接**双击运行根目录的 `run_proxy_windows.bat`**。脚本会自动检测 Python 环境、展示配置提示并启动代理服务。
+- **方法二：命令提示符 (CMD) 或 PowerShell**  
+  ```cmd
+  cd Index-Translate
+  python inference\llm\call_api.py --serve
+  REM 若系统使用的是 py 启动器：
+  py -3 inference\llm\call_api.py --serve
+  ```
+- **方法三：免 Git 单文件极简运行（适合未安装 Git 的 Windows 用户）**  
+  无需克隆整个仓库，直接下载单文件 [`call_api.py`](https://raw.githubusercontent.com/bilibili/Index-Translate/main/inference/llm/call_api.py)，在存放该文件的目录下打开 CMD 运行：
+  ```cmd
+  python call_api.py --serve
+  ```
+
+##### 🍎 macOS / 🐧 Linux 用户
+
+在终端中克隆仓库并运行：
 
 ```bash
 git clone https://github.com/bilibili/Index-Translate.git
@@ -68,7 +89,7 @@ python inference/llm/call_api.py --serve
 ![启动本地代理终端截图](assets/immersive_terminal_proxy.png)
 
 > [!TIP]
-> **局域网共享**：若需要让同一局域网内的手机、平板或其他电脑使用此服务，只需添加 `--host 0.0.0.0` 参数：
+> **局域网共享**：若需要让同一局域网内的手机、平板或其他电脑使用此服务，只需添加 `--host 0.0.0.0` 参数（Windows 批处理脚本亦支持传参 `run_proxy_windows.bat --host 0.0.0.0`）：
 > ```bash
 > python inference/llm/call_api.py --serve --host 0.0.0.0
 > ```
@@ -123,20 +144,28 @@ vllm serve IndexTeam/Index-Translate-9B \
 
 ## ❓ 常见问题排查 (FAQ)
 
-### 1. 点击「测试服务」提示连接超时或 504 错误？
-- **检查代理是否正在运行**：确保终端窗口中的 `python inference/llm/call_api.py --serve` 未被关闭。
-- **检查网络代理软件（VPN / 科学上网客户端）**：部分代理软件开启了全局或增强模式，会将 `127.0.0.1` 的本地回环流量也劫持走。请在代理软件中将 `127.0.0.1` 和 `localhost` 加入直连白名单（Bypass Domain/IP）。
+### 1. 点击「测试服务」提示连接超时、拒绝连接或 504 错误？
+- **检查代理服务是否正常运行**：确保 CMD、PowerShell 或终端窗口中的代理未被关闭，窗口中应提示正在监听 `127.0.0.1:8080`。
+- **Windows / macOS 网络代理软件劫持（重点避坑）**：
+  若开启了 VPN 或科学上网客户端（如 **Clash Verge、v2rayN、Sing-box、Netch** 等），尤其是启用了 **TUN 虚拟网卡模式** 或 **系统代理**，客户端可能会将本机的 `127.0.0.1` 回环请求拦截并转往远端代理服务器，导致连接超时或返回 504 错误。
+  - **解决步骤**：在客户端设置中开启「**绕过局域网 / 回环地址 (Bypass LAN / Loopback)**」，或在分流规则中将 `127.0.0.1` 与 `localhost` 设为 `DIRECT`（直连）。
 - **端口冲突**：如果 `8080` 端口被其他软件占用，可在启动时指定其他端口（例如 `8088`）：
   ```bash
   python inference/llm/call_api.py --serve 8088
   ```
   同时将沉浸式翻译中的接口地址改为 `http://127.0.0.1:8088/v1`。
 
-### 2. 为什么偶尔会出现思考标签 `<think>`？
+### 2. Windows 提示 `'python' 不是内部或外部命令，也不是可运行的程序`？
+- 说明系统中尚未安装 Python 3，或安装时未添加到系统环境变量 PATH。
+- **解决方法（二选一）**：
+  1. 打开 Windows **微软商店 (Microsoft Store)**，搜索并安装 `Python 3.12`，系统会自动配置好 PATH 环境变量。
+  2. 若从 [Python 官方网站](https://www.python.org/downloads/) 下载安装包，在安装首页底部务必**勾选 "Add python.exe to PATH"** 后再点击 Install。
+
+### 3. 为什么偶尔会出现思考标签 `<think>`？
 - 官方 `call_api.py --serve` 本地代理会在请求体中自动注入 `{"chat_template_kwargs": {"enable_thinking": False}, "temperature": 0.0}`，彻底杜绝思考标签。
 - 如果你是通过第三方反向代理或直接对接自建服务，请务必在客户端请求参数中显式关闭思考模式。
 
-### 3. 如何指定术语表或者保持特定译名？
+### 4. 如何指定术语表或者保持特定译名？
 - `Index-Translate` 原生支持 **instTrans** 格式的术语强对照。
 - 你可以在沉浸式翻译的 **「自定义系统提示词」** 中增加特定术语映射要求，或者直接使用官方 SDK / `call_api.py` 的 `-g / --glossary` 功能。
 

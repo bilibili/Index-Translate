@@ -35,7 +35,7 @@ pip install -U vllm     # 需要带 Qwen3.5 支持的版本（实测 0.29）
 # 命令行快速调用（标准库即开即用，支持 -t 指定语种、--stream 流式、-g 术语表、--instruction 约束等）
 python call_api.py "你好，世界。" --target en
 
-# 沉浸式翻译（Immersive Translate）等浏览器插件本地代理服务
+# 沉浸式翻译（Immersive Translate）等浏览器插件本地代理服务（Windows 用户可直接双击运行 run_proxy_windows.bat）
 python call_api.py --serve
 ```
 

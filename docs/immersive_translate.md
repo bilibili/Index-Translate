@@ -53,7 +53,28 @@ Install the extension from your browser's official store:
 
 #### Option A: Free Online 35B API (Recommended, No Local GPU Needed)
 
-Clone the repository and run the zero-dependency proxy:
+The bridge proxy is **zero-dependency** (pure Python 3 standard library, no `pip install` required).
+
+##### 🪟 Windows Users (Choose Any)
+
+- **Method 1: One-Click Batch Script (Recommended)**  
+  After cloning or downloading the repository zip, simply **double-click `run_proxy_windows.bat` in the root folder**. It automatically verifies your Python installation and starts the bridge proxy with configuration parameters displayed.
+- **Method 2: Command Prompt (CMD) or PowerShell**  
+  ```cmd
+  cd Index-Translate
+  python inference\llm\call_api.py --serve
+  REM Or using the py launcher:
+  py -3 inference\llm\call_api.py --serve
+  ```
+- **Method 3: Minimal Single-File Run (No Git Required)**  
+  Download only [`call_api.py`](https://raw.githubusercontent.com/bilibili/Index-Translate/main/inference/llm/call_api.py) into any folder, open Command Prompt in that directory, and run:
+  ```cmd
+  python call_api.py --serve
+  ```
+
+##### 🍎 macOS / 🐧 Linux Users
+
+Clone the repository and run:
 
 ```bash
 git clone https://github.com/bilibili/Index-Translate.git
@@ -68,7 +89,7 @@ Terminal output:
 ![Terminal starting local proxy](assets/immersive_terminal_proxy.png)
 
 > [!TIP]
-> **LAN Sharing**: To share this service with mobile phones, tablets, or other PCs on your local network, add `--host 0.0.0.0`:
+> **LAN Sharing**: To share this service with mobile phones, tablets, or other PCs on your local network, add `--host 0.0.0.0` (also supported by `run_proxy_windows.bat --host 0.0.0.0`):
 > ```bash
 > python inference/llm/call_api.py --serve --host 0.0.0.0
 > ```
@@ -123,18 +144,30 @@ Settings reference:
 
 ## ❓ Troubleshooting (FAQ)
 
-### 1. Connection Timeout or 504 Gateway Timeout?
-- **Verify the proxy is running**: Ensure the `python inference/llm/call_api.py --serve` process is active in your terminal.
-- **Bypass local loopback in VPN/proxies**: Some VPN/proxy tools hijack `127.0.0.1`. Add `127.0.0.1` and `localhost` to your bypass list.
+### 1. Connection Timeout, Refusal, or 504 Gateway Timeout?
+- **Verify the proxy is running**: Ensure the proxy process is active in CMD, PowerShell, or terminal, showing `Serving local OpenAI bridge on http://127.0.0.1:8080/v1`.
+- **VPN / Proxy Hijacking (Critical for Windows & macOS)**:
+  If using proxy software (e.g. **Clash Verge, v2rayN, Sing-box, Netch**), especially with **TUN Mode** or **System Proxy** enabled, local loopback requests to `127.0.0.1` may be routed through the remote proxy server, causing connection timeouts or 504 errors.
+  - **Fix**: Enable "Bypass LAN / Loopback" in your proxy client settings, or set `127.0.0.1` and `localhost` to `DIRECT` in your routing rules.
 - **Port Conflict**: If port `8080` is in use, start with a custom port:
   ```bash
   python inference/llm/call_api.py --serve 8088
   ```
   Then set the API URL in the extension to `http://127.0.0.1:8088/v1`.
 
-### 2. Seeing `<think>` tags in output?
+### 2. Windows says `'python' is not recognized as an internal or external command`?
+- Python 3 is either not installed or not added to your system `PATH`.
+- **Fix**:
+  1. Install `Python 3.12` directly from the **Microsoft Store** (it configures PATH automatically).
+  2. Or reinstall from [python.org](https://www.python.org/downloads/) and ensure you check **"Add python.exe to PATH"** on the first setup screen.
+
+### 3. Seeing `<think>` tags in output?
 - The official `call_api.py --serve` automatically injects `{"chat_template_kwargs": {"enable_thinking": False}, "temperature": 0.0}` to suppress thinking tokens.
 - When connecting directly to custom endpoints without the proxy, make sure `enable_thinking=false` is configured in your client request parameters.
+
+### 4. How to specify glossaries or custom terminology?
+- `Index-Translate` natively supports **instTrans** format for hard terminology control.
+- You can add glossary rules to Immersive Translate's **"Custom System Prompt"**, or use the `-g / --glossary` argument via `call_api.py`.
 
 ---
 

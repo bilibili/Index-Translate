@@ -108,9 +108,9 @@ curl https://index-translate.bilibili.com/v1/responses \
 ```
 
 > [!TIP]
-> 🌐 **Bilingual Web Browsing? Immersive Translate is supported out-of-the-box!**
-> Browser extensions benefit from our zero-config local bridge proxy to overcome CORS restrictions, WAF headers, and to suppress Chain-of-Thought (CoT) reasoning.
-> 👉 **[【Setup Guide】Immersive Translate Configuration Tutorial (with Screenshots & Troubleshooting)](docs/immersive_translate.md)**
+> 🌐 **Bilingual Web Browsing? Immersive Translate is supported out-of-the-box (Windows / macOS / Linux)!**
+> Browser extensions benefit from our zero-config local bridge proxy (Windows users can simply double-click `run_proxy_windows.bat` in the root folder).
+> 👉 **[【Setup Guide】Immersive Translate Configuration Tutorial (Windows / macOS / Linux, with Screenshots & Troubleshooting)](docs/immersive_translate.md)**
 
 #### Option 2: Self-hosted local vLLM
 
@@ -349,7 +349,7 @@ See the [full evaluation settings](docs/evaluation.md) and [IFMTBench preprocess
 
 ## Applications
 
-- **[Immersive Translate Guide](docs/immersive_translate.md):** step-by-step tutorial with screenshots to use the free public 35B API or local models with the Immersive Translate browser extension.
+- **[Immersive Translate Guide](docs/immersive_translate.md):** step-by-step tutorial with screenshots for Windows (one-click `.bat` script provided) / macOS / Linux to use the free public 35B API or local models with Immersive Translate.
 - **[Native Browser extension](extension/README.md):** lightweight built-in webpage translator supporting Chrome, Edge, and Firefox.
 - **[Video dubbing pipeline](video-dub/README.md):** extract audio, separate vocals, segment speech, translate and dub, then align the result to the original video.
 
