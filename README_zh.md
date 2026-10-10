@@ -1,7 +1,7 @@
 <p align="center"><a href="README.md">English</a> · 中文</p>
 
 <h1 align="center">Index-Translate</h1>
-<p align="center"><strong>多语言翻译模型家族</strong><br>图文、语音、可控配音与长文档翻译</p>
+<p align="center"><strong>多语言、多模态翻译模型家族</strong><br>图文、语音、可控配音与长文档翻译</p>
 
 <p align="center">
   <a href="https://index-translate.bilibili.com/">🌐&nbsp;Demo</a> ·
@@ -17,7 +17,7 @@
 > [!TIP]
 > 🚀 **官方免费 API 现已开放！** 无需本地显卡环境，直接免费调用 **Index-Translate-35B-A3B** 旗舰翻译模型。完全兼容 OpenAI 接口规范（Base URL: `https://index-translate.bilibili.com/v1`）。支持免依赖脚本即开即用：`python inference/llm/call_api.py "你好，世界" --target en`！👉 [快速上手指南](#方式一免费公网-api-快速调用无需本地-gpu)
 
-Index-Translate 是基于 Qwen3.5 构建的多语言翻译模型家族。文本模型覆盖**150 种语言**，支持术语、格式、保留内容等翻译指令，并将共同的多语基础扩展到视觉图像、语音、音节可控翻译和长文档翻译。
+Index-Translate 是基于 Qwen3.5 构建的多语言、多模态翻译模型家族。文本模型覆盖**150 种语言**，支持术语、格式、保留内容等翻译指令，并将共同的多语基础扩展到视觉图像、语音、音节可控翻译和长文档翻译。
 
 - **Index-Translate**：翻译文本、多模态图像（基于原生视觉编码器，零 OCR 依赖）、结构化内容与社区表达。
 - **Index-Echo**：生成目标语言字幕或配音，配音时参考源语音的说话人声音特征。

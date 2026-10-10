@@ -1,7 +1,7 @@
 <p align="center">English · <a href="README_zh.md">中文</a></p>
 
 <h1 align="center">Index-Translate</h1>
-<p align="center"><strong>A Multilingual Translation Model Family</strong><br>Text & Vision, Speech, Controlled Dubbing, and Long-Document Translation</p>
+<p align="center"><strong>A Multilingual, Multimodal Translation Model Family</strong><br>Text & Vision, Speech, Controlled Dubbing, and Long-Document Translation</p>
 
 <p align="center">
   <a href="https://index-translate.bilibili.com/">🌐&nbsp;Demo</a> ·
@@ -17,7 +17,7 @@
 > [!TIP]
 > 🚀 **Free Public API Now Available!** Call **Index-Translate-35B-A3B** directly with zero GPU setup. Fully OpenAI-compatible at `https://index-translate.bilibili.com/v1`. Try it in seconds with `python inference/llm/call_api.py "Hello, world!" --target zh`! 👉 [API Quick Start](#option-1-free-online-api-zero-gpu-setup)
 
-Index-Translate is a family of multilingual translation models built on Qwen3.5. The text models cover **150 languages** and follow translation instructions such as terminology, formatting, and content-preservation requirements. The family extends this foundation to visual images, speech, syllable-controlled translation, and full-document translation.
+Index-Translate is a family of multilingual, multimodal translation models built on Qwen3.5. The text models cover **150 languages** and follow translation instructions such as terminology, formatting, and content-preservation requirements. The family extends this foundation to visual images, speech, syllable-controlled translation, and full-document translation.
 
 - **Index-Translate** translates text, multimodal images (native vision encoder, zero OCR dependency), structured content, and community expressions.
 - **Index-Echo** produces translated subtitles or speech conditioned on the source speaker's voice.
