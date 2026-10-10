@@ -1,7 +1,7 @@
 <p align="center"><a href="README.md">English</a> · 中文</p>
 
 <h1 align="center">Index-Translate</h1>
-<p align="center"><strong>多语言翻译模型家族</strong><br>文本、语音、可控配音与长文档翻译</p>
+<p align="center"><strong>多语言翻译模型家族</strong><br>图文、语音、可控配音与长文档翻译</p>
 
 <p align="center">
   <a href="https://index-translate.bilibili.com/">🌐&nbsp;Demo</a> ·

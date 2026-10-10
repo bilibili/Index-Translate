@@ -1,7 +1,7 @@
 <p align="center">English · <a href="README_zh.md">中文</a></p>
 
 <h1 align="center">Index-Translate</h1>
-<p align="center"><strong>A Multilingual Translation Model Family</strong><br>Text, Speech, Controlled Dubbing, and Long-Document Translation</p>
+<p align="center"><strong>A Multilingual Translation Model Family</strong><br>Vision & Text, Speech, Controlled Dubbing, and Long-Document Translation</p>
 
 <p align="center">
   <a href="https://index-translate.bilibili.com/">🌐&nbsp;Demo</a> ·
