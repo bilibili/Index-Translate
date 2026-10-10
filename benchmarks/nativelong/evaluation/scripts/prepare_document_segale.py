@@ -68,7 +68,9 @@ def main() -> None:
         raise ValueError(f"Unexpected generations: {sorted(unexpected)}")
     grouped_units: dict[str, list[dict]] = {case_id: [] for case_id in cases_by_id}
     for unit in units:
-        grouped_units.setdefault(unit["case_id"], []).append(unit)
+        if unit["case_id"] not in grouped_units:
+            raise ValueError(f"Alignment unit has unknown case_id: {unit['case_id']}")
+        grouped_units[unit["case_id"]].append(unit)
     selected, failures = [], []
     for case in cases:
         case_id = case["case_id"]
@@ -152,6 +154,11 @@ def main() -> None:
             "segale_source_unit_count": len(source_lines),
             "canonical_null_source_count": sum(not row["source"] for row in canonical_units),
             "canonical_null_reference_count": sum(not row["reference"] for row in canonical_units),
+            # Content fingerprints of the exact inputs this adapter scored:
+            # the summarizer re-binds the caller's current cases/generations to
+            # these before trusting a COMET sidecar produced from this manifest.
+            "source_sha256": sha_text(case["source"]),
+            "reference_sha256": sha_text(case["reference"]),
             "segale_rendering": "non-null-source units in canonical order; canonical units remain in release alignment-units.jsonl",
             "generation": {key: run.get(key) for key in (
                 "finish_reason", "input_tokens", "output_tokens", "cap_hit",

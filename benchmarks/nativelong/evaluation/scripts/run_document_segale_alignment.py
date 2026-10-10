@@ -8,6 +8,7 @@ import datetime
 import json
 import multiprocessing
 import re
+import sys
 import time
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 from pathlib import Path
@@ -73,6 +74,12 @@ def write_prepared_inputs(segmented, scratch_folder, tokenizer, model, max_size)
     src_sentences = segmented["src_sentences"]
     ref_sentences = segmented["ref_sentences"]
     mt_sentences = segmented["mt_sentences"]
+    if not src_sentences or not mt_sentences:
+        raise ValueError(
+            f"Document {doc_id} produced empty inputs "
+            f"(source_sentences={len(src_sentences)}, target_sentences={len(mt_sentences)}); "
+            "embedding concatenation requires at least one row per side"
+        )
 
     src_started = time.perf_counter()
     src_overlap, src_embed = base.generate_overlap_and_embedding(
@@ -283,6 +290,13 @@ def main():
     scratch_folder.mkdir(parents=True, exist_ok=False)
 
     ref_path = Path(args.ref_file)
+    alignment_summary_path = ref_path.parent / ref_path.stem / "spacy_alignment_summary.json"
+    if not alignment_summary_path.is_file():
+        print(
+            f"warning: {alignment_summary_path} not found; continuing with default "
+            "SEGALE alignment thresholds",
+            file=sys.stderr,
+        )
     align_paras = base.load_alignment_summary(
         str(ref_path.parent / ref_path.stem)
     )

@@ -11,6 +11,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 BANDS = ['4k', '8k', '16k', '32k', '64k']
+SUITE_ID = 'nativelongbenchmark'
+SYSTEM_KEY = 'prediction'
 
 
 def read_rows(path):
@@ -33,6 +35,41 @@ def prepare_generations(rows):
     return result
 
 
+def file_inputs(paths):
+    """Input records that the COMET sidecar validation can re-verify."""
+    return {name: {'path': str(path.resolve()),
+                   'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
+            for name, path in paths.items()}
+
+
+def write_empty_comet_run(comet_dir, inputs):
+    """Write a validation-compliant COMET sidecar when no case was selected.
+
+    The summarizer validates the COMET triple before trusting it, so an empty
+    selection still has to ship a completed marker and artifact hashes.
+    """
+    comet_dir.mkdir()
+    summary = {
+        'schema_version': 'document-comet-v1', 'suite_id': SUITE_ID,
+        'system_key': SYSTEM_KEY, 'inputs': inputs, 'experiment': {},
+        'runtime': {'selection': 'no_scorable_cases', 'windows': 0},
+        'metrics': {}, 'aggregate': {'documents': 0, 'windows': 0}, 'cases': [],
+    }
+    (comet_dir / 'summary.json').write_text(
+        json.dumps(summary, ensure_ascii=False, indent=2) + '\n')
+    (comet_dir / 'per_window.jsonl').write_text('')
+    manifest = {name: hashlib.sha256((comet_dir / name).read_bytes()).hexdigest()
+                for name in ('summary.json', 'per_window.jsonl')}
+    (comet_dir / 'artifact-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+    (comet_dir / 'COMPLETED.json').write_text(json.dumps({
+        'status': 'completed', 'scope': 'document-comet-empty-selection',
+        'artifact_manifest_sha256': hashlib.sha256(
+            (comet_dir / 'artifact-manifest.json').read_bytes()).hexdigest(),
+        'suite_id': SUITE_ID, 'system_key': SYSTEM_KEY,
+        'aggregate': {'documents': 0, 'windows': 0, 'macro_comet': None},
+    }, indent=2) + '\n')
+
+
 def five_band_macro(summary):
     groups = summary['groups'].get('length_band', {})
     means = {band: groups.get(band, {}).get('segale_comet') for band in BANDS}
@@ -40,6 +77,8 @@ def five_band_macro(summary):
             if all(x is not None for x in means.values()) else None,
             'scale': [0, 1], 'band_means': means,
             'coverage': {band: {'scored': groups.get(band, {}).get('scored_cases', 0),
+                                'scored_with_comet': groups.get(band, {}).get(
+                                    'scored_with_comet_cases', 0),
                                 'total': groups.get(band, {}).get('cases', 0)} for band in BANDS}}
 
 
@@ -86,7 +125,7 @@ def main():
     env['TRANSFORMERS_OFFLINE'] = '1'
     env['TOKENIZERS_PARALLELISM'] = 'false'
     env.setdefault('OMP_NUM_THREADS', '4')
-    identity = ['--suite-id', 'nativelongbenchmark', '--system-key', 'prediction']
+    identity = ['--suite-id', SUITE_ID, '--system-key', SYSTEM_KEY]
 
     def run(script, *values):
         subprocess.run([sys.executable, str(ROOT / 'scripts' / script),
@@ -109,10 +148,11 @@ def main():
             '--model-checkpoint', resolved['comet'], '--encoder-model', resolved['encoder'].parent,
             '--batch-size', args.batch_size, '--gpus', int(args.device == 'cuda'),
             '--spacy-model', 'en_core_web_sm',
-            '--target-sentences', adapter / 'system/target_sentences.jsonl')
+            '--target-sentences', adapter / 'system/target_sentences.jsonl', *identity)
     else:
-        comet.mkdir()
-        (comet / 'summary.json').write_text(json.dumps({'cases': []}) + '\n')
+        write_empty_comet_run(comet, file_inputs({
+            'manifest': adapter / 'manifest.json', 'cases': cases,
+            'generations': generations}))
     run('summarize_document_segale.py', '--cases', cases, '--generations', generations,
         '--comet-summary', comet / 'summary.json', '--output', args.output / 'summary.json',
         '--group-by', 'work_id', '--group-by', 'length_band', '--chrf-dir', chrf, *identity)

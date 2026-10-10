@@ -17,7 +17,8 @@ class RunnerTest(unittest.TestCase):
         groups["64k"]["scored_cases"] = 0
         result = runner.five_band_macro(summary)
         self.assertIsNone(result["value"])
-        self.assertEqual(result["coverage"]["64k"], {"scored": 0, "total": 12})
+        self.assertEqual(result["coverage"]["64k"],
+                         {"scored": 0, "scored_with_comet": 0, "total": 12})
 
     def test_raw_translation_and_unknown_metadata(self):
         text = "  First.\nSecond.\u2028Third.  "

@@ -4,10 +4,176 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import statistics
 from collections import Counter, defaultdict
 from pathlib import Path
+
+
+def sha_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def sha_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def verify_comet_artifacts(
+    comet_summary: Path, suite_id: str, system_key: str,
+    input_overrides: dict[str, Path] | None = None,
+) -> dict:
+    """Reject an incomplete, stale or foreign COMET sidecar before trusting it.
+
+    Mirrors the chrF2 validation: completed marker, artifact manifest hash,
+    per-artifact hashes, run identity and input hashes must all agree.
+
+    Recorded inputs are re-resolved by content instead of by the scoring
+    machine's absolute path: an explicit caller override (``input_overrides``)
+    or a relocatable copy bundled in the results packet (``inputs[name]["bundled"]``,
+    relative to the sidecar directory and only accepted while it resolves
+    inside it) is accepted before falling back to the recorded path. A candidate
+    that exists must hash to the recorded digest;
+    when no candidate exists the run is rejected and the caller is told how to
+    point at the current location.
+    """
+
+    comet_dir = Path(comet_summary).parent
+    completed_path = comet_dir / "COMPLETED.json"
+    if not completed_path.is_file():
+        raise ValueError(f"COMET run is not completed: missing {completed_path}")
+    completed = json.loads(completed_path.read_text(encoding="utf-8"))
+    if completed.get("status") != "completed":
+        raise ValueError(f"COMET run status is not completed: {completed.get('status')}")
+    artifact_path = comet_dir / "artifact-manifest.json"
+    if not artifact_path.is_file():
+        raise ValueError(f"COMET run has no artifact manifest: {artifact_path}")
+    manifest_digest = completed.get("artifact_manifest_sha256")
+    if not isinstance(manifest_digest, str):
+        raise ValueError("COMET completed marker records no artifact manifest hash")
+    if manifest_digest != sha_file(artifact_path):
+        raise ValueError("COMET artifact manifest hash mismatch")
+    artifacts = json.loads(artifact_path.read_text(encoding="utf-8"))
+    if not isinstance(artifacts, dict):
+        raise ValueError("COMET artifact manifest is not an object")
+    for name in ("summary.json", "per_window.jsonl"):
+        digest = artifacts.get(name)
+        if not isinstance(digest, str):
+            raise ValueError(f"COMET artifact manifest records no hash for {name}")
+        if digest != sha_file(comet_dir / name):
+            raise ValueError("COMET artifact hash mismatch")
+    summary = json.loads(Path(comet_summary).read_text(encoding="utf-8"))
+    if summary.get("suite_id") != suite_id or summary.get("system_key") != system_key:
+        raise ValueError("COMET run identity mismatch")
+    scores = summary.get("cases")
+    if not isinstance(scores, list):
+        raise ValueError("COMET summary cases must be a list")
+    for row in scores:
+        if not isinstance(row, dict) or not isinstance(row.get("case_id"), str):
+            raise ValueError("COMET summary case entries must be objects with a case_id")
+    inputs = summary.get("inputs")
+    if not isinstance(inputs, dict) or not inputs:
+        raise ValueError("COMET summary records no input hashes")
+    resolved: dict[str, Path] = {}
+    for name, record in inputs.items():
+        if not isinstance(record, dict):
+            raise ValueError(f"COMET input record {name} is not an object: {record!r}")
+        candidates: list[Path] = []
+        override = (input_overrides or {}).get(name)
+        if override is not None:
+            candidates.append(Path(override))
+        bundled = record.get("bundled")
+        if isinstance(bundled, str) and bundled:
+            bundled_path = Path(bundled)
+            if not bundled_path.is_absolute() and ".." not in bundled_path.parts:
+                candidate = comet_dir / bundled_path
+                # A packet-local symlink can still point outside the packet;
+                # accept the copy only while its resolved target stays inside.
+                try:
+                    target = candidate.resolve()
+                    root = comet_dir.resolve()
+                except (OSError, RuntimeError):
+                    # resolve() raises RuntimeError (not OSError) on a symlink
+                    # loop; either way, fall back to the lexical path and let
+                    # the is_file()/hash checks reject the candidate.
+                    target = candidate
+                    root = comet_dir
+                if target.is_relative_to(root):
+                    candidates.append(candidate)
+        recorded = record.get("path")
+        if recorded is not None and not isinstance(recorded, str):
+            raise ValueError(f"COMET input record {name} has a non-string path: {recorded!r}")
+        if recorded:
+            candidates.append(Path(recorded))
+        chosen = next((path for path in candidates if path.is_file()), None)
+        if chosen is None:
+            locations = ", ".join(str(path) for path in candidates) or "no paths recorded"
+            raise ValueError(
+                f"COMET input {name} is missing: {locations} "
+                f"(pass --comet-input {name}=PATH to record its current location)"
+            )
+        if record.get("sha256") != sha_file(chosen):
+            raise ValueError(f"COMET input hash mismatch: {name} -> {chosen}")
+        resolved[name] = chosen
+    return {"summary": summary, "comet_dir": comet_dir, "resolved": resolved}
+
+
+def verify_comet_inputs(comet: dict, cases: list[dict], generations: list[dict]) -> None:
+    """Bind the caller's current cases/generations to the scored COMET run.
+
+    The COMET summary carries per-case fingerprints of the inputs the scores
+    were computed from (generation, source and reference content digests
+    recorded by the adapter manifest). Re-scoring is required whenever the
+    current inputs no longer hash to those values: joining them would publish
+    new inputs under old scores.
+    """
+
+    cases_by_id = {row["case_id"]: row for row in cases}
+    generations_by_id = {row["case_id"]: row for row in generations}
+    for score in comet["cases"]:
+        case_id = score["case_id"]
+        binding = score.get("binding")
+        if not isinstance(binding, dict):
+            raise ValueError(
+                f"COMET summary does not bind its inputs for case {case_id}; "
+                "re-score this run with the current pipeline"
+            )
+        generation = generations_by_id.get(case_id)
+        case = cases_by_id.get(case_id)
+        if generation is None:
+            raise ValueError(f"COMET scored a case without a generation: {case_id}")
+        if case is None:
+            raise ValueError(f"COMET scored an unknown case: {case_id}")
+        generation_digest = binding.get("generation_output_sha256")
+        mt = generation.get("mt")
+        if not isinstance(generation_digest, str) or not isinstance(mt, str):
+            raise ValueError(
+                f"COMET summary does not bind its inputs for case {case_id}; "
+                "re-score this run with the current pipeline"
+            )
+        if sha_text(mt) != generation_digest:
+            raise ValueError(
+                f"COMET scores do not match the provided generations for case "
+                f"{case_id}: re-score the run"
+            )
+        for field, digest_key in (("source", "source_sha256"),
+                                  ("reference", "reference_sha256")):
+            digest = binding.get(digest_key)
+            value = case.get(field)
+            if not isinstance(digest, str) or not isinstance(value, str):
+                raise ValueError(
+                    f"COMET summary does not bind its inputs for case {case_id}; "
+                    "re-score this run with the current pipeline"
+                )
+            if sha_text(value) != digest:
+                raise ValueError(
+                    f"COMET scores do not match the provided cases for case "
+                    f"{case_id}: re-score the run"
+                )
 
 
 STANDARD_METADATA_FIELDS = (
@@ -49,6 +215,9 @@ def group_summary(rows: list[dict]) -> dict:
     return {
         "cases": len(rows),
         "scored_cases": scored_cases,
+        "scored_with_comet_cases": sum(
+            isinstance(row.get("segale_comet"), (int, float)) for row in rows
+        ),
         "failed_cases": len(rows) - scored_cases,
         "generation_status_counts": dict(sorted(statuses.items())),
         "segale_comet": mean(row.get("segale_comet") for row in rows),
@@ -98,16 +267,33 @@ def main() -> None:
     parser.add_argument("--system-key", required=True)
     parser.add_argument("--group-by", action="append", default=[])
     parser.add_argument("--chrf-dir", type=Path)
+    parser.add_argument(
+        "--comet-input", action="append", default=[], metavar="NAME=PATH",
+        help="Current location of a recorded COMET input (repeatable), e.g. "
+             "--comet-input aligned_input=/moved/aligned.jsonl",
+    )
     args = parser.parse_args()
+
+    overrides: dict[str, Path] = {}
+    for item in args.comet_input:
+        name, separator, value = item.partition("=")
+        if not separator or not name or not value:
+            parser.error("--comet-input must be NAME=PATH")
+        overrides[name] = Path(value)
 
     cases = read_jsonl(args.cases)
     generations = read_jsonl(args.generations)
-    comet = json.loads(args.comet_summary.read_text(encoding="utf-8"))
+    verified = verify_comet_artifacts(
+        args.comet_summary, args.suite_id, args.system_key, overrides
+    )
+    comet = verified["summary"]
     cases_by_id = {row["case_id"]: row for row in cases}
     generations_by_id = {row["case_id"]: row for row in generations}
     scores_by_id = {row["case_id"]: row for row in comet["cases"]}
     if len(cases_by_id) != len(cases) or len(generations_by_id) != len(generations):
         raise ValueError("Duplicate case_id")
+    if len(scores_by_id) != len(comet["cases"]):
+        raise ValueError("Duplicate case_id in COMET summary")
     expected = set(cases_by_id)
     unexpected_generations = set(generations_by_id) - expected
     if unexpected_generations:
@@ -119,6 +305,7 @@ def main() -> None:
     }
     if set(scores_by_id) != expected_scores:
         raise ValueError("Score coverage differs from successful generations")
+    verify_comet_inputs(comet, cases, generations)
 
     rows = []
     statuses = Counter()
@@ -217,7 +404,7 @@ def main() -> None:
             row["auxiliary_metrics"] = {"chrf2": extra}
         result["auxiliary_metrics"] = {"chrf2": {
             "metric": auxiliary["metric"], "aggregate": aggregate(chrf_rows),
-            "artifact": "chrf2/summary.json",
+            "artifact": str(args.chrf_dir / "summary.json"),
         }}
         for field, buckets in grouped.items():
             for label, bucket in buckets.items():

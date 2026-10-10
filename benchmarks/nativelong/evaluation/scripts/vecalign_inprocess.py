@@ -14,8 +14,13 @@ import numpy as np
 
 def read_embedding_candidates(text_file: Path, embed_file: Path):
     candidates = json.loads(text_file.read_text(encoding="utf-8"))
-    if not isinstance(candidates, list) or not candidates or not all(isinstance(value, str) for value in candidates):
-        raise ValueError("embedding candidates must be a non-empty string list")
+    if not isinstance(candidates, list) or not all(isinstance(value, str) for value in candidates):
+        raise ValueError("embedding candidates must be a string list")
+    if not candidates:
+        raise ValueError(
+            "embedding candidates are empty: the aligner produced no candidate "
+            "sentences for this side"
+        )
     sent2line = {}
     for index, candidate in enumerate(candidates):
         key = candidate.strip()

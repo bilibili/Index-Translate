@@ -12,7 +12,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from prepare_document_segale import read_jsonl, sha_text, write_jsonl
-from summarize_document_segale import case_metadata
+from summarize_document_segale import STANDARD_METADATA_FIELDS, case_metadata
 
 VERSION = "2.6.0"
 PARAMETERS = dict(char_order=6, word_order=0, beta=2, lowercase=False,
@@ -124,6 +124,10 @@ def main():
                             read_jsonl(args.generations))
     groups = {}
     for field in args.group_by:
+        if field not in STANDARD_METADATA_FIELDS and not any(
+            field in row['metadata'] for row in rows
+        ):
+            raise ValueError(f'Unknown grouping field: {field}')
         buckets = defaultdict(list)
         for row in rows:
             value = row['metadata'].get(field)

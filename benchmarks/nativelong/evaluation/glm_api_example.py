@@ -74,7 +74,7 @@ def translate(row, key, settings, timeout):
     record["input_tokens"] = usage.get("prompt_tokens")
     record["output_tokens"] = usage.get("completion_tokens")
     finish = record["finish_reason"]
-    if finish in ("sensitive", "content_filter") or "1301" in str(record.get("error", "")):
+    if finish in ("sensitive", "content_filter") or error_code(record) == "1301":
         record["status"] = "content_filter"
     elif record.get("refusal"):
         record["status"] = "refused"
@@ -87,6 +87,30 @@ def translate(row, key, settings, timeout):
     record = json.loads(json.dumps(record, ensure_ascii=False).replace(key, "[REDACTED]"))
     record["output_sha256"] = hashlib.sha256(record["mt"].encode()).hexdigest()
     return record
+
+
+def error_code(record: dict) -> str | None:
+    """Return the provider error code from a structured body, never a substring match.
+
+    Substring matching on the whole error text misclassified unrelated payloads
+    (any token id, request id or echoed sequence containing "1301") as content
+    filtering, so only explicit JSON code fields count here.
+    """
+    raw = record.get("error")
+    if not isinstance(raw, str):
+        return None
+    try:
+        body = json.loads(raw)
+    except ValueError:
+        return None
+    if not isinstance(body, dict):
+        return None
+    nested = body.get("error") if isinstance(body.get("error"), dict) else {}
+    for value in (body.get("code"), body.get("error_code"),
+                  nested.get("code"), nested.get("type")):
+        if isinstance(value, (str, int)):
+            return str(value)
+    return None
 
 
 def main():
