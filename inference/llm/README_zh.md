@@ -35,11 +35,38 @@ pip install -U vllm     # 需要带 Qwen3.5 支持的版本（实测 0.29）
 # 命令行快速调用（标准库即开即用，支持 -t 指定语种、--stream 流式、-g 术语表、--instruction 约束等）
 python call_api.py "你好，世界。" --target en
 
+# 多模态图片翻译（无需本地 GPU，直接识别并翻译图片中的文字）
+python call_api.py --image screenshot.png --target zh
+
 # 沉浸式翻译（Immersive Translate）等浏览器插件本地代理服务（Windows 用户可直接双击运行 run_proxy_windows.bat）
 python call_api.py --serve
 ```
 
-> 📖 **沉浸式翻译图文教程**：沉浸式翻译等浏览器插件直连公网端点时，受限于浏览器跨域限制 (CORS)、WAF 保护以及思维链 (CoT) 格式要求，请在本地运行 `python call_api.py --serve`。详细图文配置步骤与常见问题排查见：**[【图文教程】沉浸式翻译配置指南](../../docs/immersive_translate_zh.md)**。
+> 📖 **相关教程指南**：
+> - 🖼️ **[【图文教程】多模态图片翻译完整指南](../../docs/image_translate_zh.md)**：零 OCR 依赖，支持截图、海报、路牌、漫画与表格图像端到端翻译。
+> - 🌐 **[【图文教程】沉浸式翻译配置指南](../../docs/immersive_translate_zh.md)**：浏览器插件跨域/思考词过滤与图文配置步骤。
+
+### 多模态图片翻译（Vision / Image Translation）
+
+模型支持基于原生视觉编码器（Visual Encoder `mmproj`）的端到端图像翻译，**无需依赖任何外部 OCR 引擎**，直接理解并翻译图像中的文本与版式：
+
+```bash
+# 1. 免费公网 API 调用图片翻译（支持 PNG / JPG / WEBP / BMP，本地文件或 URL 均可）：
+python call_api.py --image path/to/screenshot.png --target zh
+
+# 2. 结合自定义指令约束翻译图片：
+python call_api.py "翻译图片中的标题与正文" --image slide.jpg --target en \
+    --instruction "保持商务演讲口吻，专有名词规范输出"
+
+# 3. 本地私有化部署 llama-server 挂载视觉权重：
+llama-server \
+  -m Index-Translate-35B-A3B-preview.Q8_0.gguf \
+  --mmproj Index-Translate-35B-A3B-preview.mmproj-Q8_0.gguf \
+  -ngl 99 -c 65536 --port 8000 --alias Index-Translate-35B-A3B
+
+# 4. 本地推理脚本调用图片翻译：
+python translate.py --image document.jpg --target zh
+```
 
 ### 本地私有化部署模型调用
 

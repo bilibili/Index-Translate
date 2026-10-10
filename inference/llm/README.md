@@ -37,11 +37,38 @@ Call the online **Index-Translate-35B-A3B** model without a local GPU using our 
 # Quick command-line translation (stdlib-only; supports -t language, --stream, -g glossary, --instruction)
 python call_api.py "你好，世界。" --target en
 
+# Multimodal image translation (translate text inside screenshot / photo / poster / sign)
+python call_api.py --image screenshot.png --target zh
+
 # Local bridge proxy for browser extensions (Windows users can double-click run_proxy_windows.bat)
 python call_api.py --serve
 ```
 
-> 📖 **Immersive Translate Setup Guide**: Browser extensions require a local bridge proxy due to CORS restrictions, WAF protections, and the need to disable CoT thinking output. Run `python call_api.py --serve`, then follow our step-by-step tutorial: **[【Guide】Immersive Translate Configuration Tutorial](../../docs/immersive_translate.md)**.
+> 📖 **Related Guides**:
+> - 🖼️ **[【Guide】Multimodal Image Translation Tutorial](../../docs/image_translate.md)**: Zero OCR dependency, end-to-end image-to-text translation.
+> - 🌐 **[【Guide】Immersive Translate Configuration Tutorial](../../docs/immersive_translate.md)**: Step-by-step browser extension setup.
+
+### Multimodal Image Translation (Vision / mmproj)
+
+Index-Translate natively supports multimodal image-to-text translation using its visual encoder (`mmproj`), **requiring zero external OCR tools**:
+
+```bash
+# 1. Translate image via free public API (supports PNG, JPG, WEBP, BMP, local path or URL):
+python call_api.py --image path/to/screenshot.png --target zh
+
+# 2. Image translation with custom prompt / constraints:
+python call_api.py "Translate titles and key points in the image" --image slide.jpg --target en \
+    --instruction "Maintain professional business presentation tone"
+
+# 3. Self-hosted deployment using llama-server with mmproj:
+llama-server \
+  -m Index-Translate-35B-A3B-preview.Q8_0.gguf \
+  --mmproj Index-Translate-35B-A3B-preview.mmproj-Q8_0.gguf \
+  -ngl 99 -c 65536 --port 8000 --alias Index-Translate-35B-A3B
+
+# 4. Local Python script invocation:
+python translate.py --image document.jpg --target zh
+```
 
 ### Self-Hosted Local Model Invocation
 

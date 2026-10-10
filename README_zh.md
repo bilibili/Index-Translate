@@ -17,9 +17,9 @@
 > [!TIP]
 > 🚀 **官方免费 API 现已开放！** 无需本地显卡环境，直接免费调用 **Index-Translate-35B-A3B** 旗舰翻译模型。完全兼容 OpenAI 接口规范（Base URL: `https://index-translate.bilibili.com/v1`）。支持免依赖脚本即开即用：`python inference/llm/call_api.py "你好，世界" --target en`！👉 [快速上手指南](#方式一免费公网-api-快速调用无需本地-gpu)
 
-Index-Translate 是基于 Qwen3.5 构建的多语言翻译模型家族。文本模型覆盖**150 种语言**，支持术语、格式、保留内容等翻译指令，并将共同的多语基础扩展到语音、音节可控翻译和长文档翻译。
+Index-Translate 是基于 Qwen3.5 构建的多语言翻译模型家族。文本模型覆盖**150 种语言**，支持术语、格式、保留内容等翻译指令，并将共同的多语基础扩展到视觉图像、语音、音节可控翻译和长文档翻译。
 
-- **Index-Translate**：翻译文本、结构化内容与社区表达。
+- **Index-Translate**：翻译文本、多模态图像（基于原生视觉编码器，零 OCR 依赖）、结构化内容与社区表达。
 - **Index-Echo**：生成目标语言字幕或配音，配音时参考源语音的说话人声音特征。
 - **Index-Homura**：根据指定的目标音节数调整译文。
 - **Index-NativeLong**：输入完整文档，利用上下文维持前后联系。
@@ -30,13 +30,14 @@ Index-Translate 是基于 Qwen3.5 构建的多语言翻译模型家族。文本�
 
 雷达图采用官网七类聚合分数，在完整对比模型集合上固定各维度的 min–max 范围进行归一化，并非准确率。灰色虚线是各维度非 Index 模型的最高值组合，不代表一个实际模型。[原始聚合分数](docs/assets/seven_category_scores_raw.csv) · [图表说明](docs/assets/README.md) · [单项评测结果](docs/evaluation_zh.md)。
 
-[最新动态](#最新动态) · [⚡ 免费 API](#方式一免费公网-api-快速调用无需本地-gpu) · [模型下载](#模型下载) · [快速上手](#快速上手) · [指令遵循](#指令遵循与约束翻译) · [精选案例](#精选案例) · [评测结果](#评测结果) · [Benchmarks](#benchmarks) · [应用工具](#应用工具) · [TODO](#todo) · [论文与引用](#论文与引用)
+[最新动态](#最新动态) · [⚡ 免费 API](#方式一免费公网-api-快速调用无需本地-gpu) · [🖼️ 图片翻译](#多模态图片翻译vision) · [模型下载](#模型下载) · [快速上手](#快速上手) · [指令遵循](#指令遵循与约束翻译) · [精选案例](#精选案例) · [评测结果](#评测结果) · [Benchmarks](#benchmarks) · [应用工具](#应用工具) · [TODO](#todo) · [论文与引用](#论文与引用)
 
 ## 最新动态
 
+- **2026-10-10：** 全面开放多模态图片翻译（Vision）支持！免费公网 API、在线 Demo、Python 调用脚本（[call_api.py](inference/llm/call_api.py)）与 GGUF mmproj 权重同步支持图像输入，零外部 OCR 依赖。详见 [图文教程](docs/image_translate_zh.md)。
 - **2026-10-04：** 正式开放 35B-A3B 免费公网 API 接口（[index-translate.bilibili.com/v1](https://index-translate.bilibili.com)），完全兼容 OpenAI 规范。支持通过 [call_api.py](inference/llm/call_api.py) 免 GPU 快速调用。
 - **2026-10-04：** 发布四个 [Index-Translate benchmarks](#benchmarks)；Hugging Face 提供数据／元数据，GitHub 同步评测脚本和运行说明。
-- **2026-10-03：** 发布全家族官方量化版本（Hugging Face 与 ModelScope 同步开放）—— 包含适用于 llama.cpp 本地推理的 **GGUF**，以及适用于 vLLM 部署的 **FP8**（W8A8）与 **NVFP4**（W4A4，面向 Blackwell GPU）。
+- **2026-10-03：** 发布全家族官方量化版本（Hugging Face 与 ModelScope 同步开放）—— 包含适用于 llama.cpp 本地推理的 **GGUF**（含原生视觉 mmproj 权重），以及适用于 vLLM 部署的 **FP8**（W8A8）与 **NVFP4**（W4A4，面向 Blackwell GPU）。
 - **2026-09-30：** Index-Translate 正式发布，2B / 9B / 35B-A3B（preview）文本模型权重在 Hugging Face 与 ModelScope 开放，技术报告与在线 Demo 上线。
 
 ## TODO
@@ -83,7 +84,10 @@ Index-Translate 是基于 Qwen3.5 构建的多语言翻译模型家族。文本�
 # 1. 命令行快速翻译（零外部依赖，标准库即开即用）
 python inference/llm/call_api.py "你好，世界。今天天气不错，我们去公园散步吧。" --target en
 
-# 2. 沉浸式翻译（Immersive Translate）等浏览器插件配置（需启动本地代理）：
+# 2. 多模态图片翻译（无需 OCR，直接识别截图/照片/海报文字并翻译为指定语言）
+python inference/llm/call_api.py --image path/to/screenshot.png --target zh
+
+# 3. 沉浸式翻译（Immersive Translate）等浏览器插件配置（需启动本地代理）：
 # 浏览器扩展受同源策略 (CORS) 与请求头限制，且需强制关闭思考输出，请在本地启动代理服务：
 python inference/llm/call_api.py --serve
 # 启动后在沉浸式翻译中配置：
@@ -100,7 +104,24 @@ curl https://index-translate.bilibili.com/v1/chat/completions \
     "messages": [{"role": "user", "content": "请将以下文本翻译为英语，直接输出翻译结果，不要进行任何解释。\n\n你好，世界。"}]
   }'
 
-# 选项 B：最新 OpenAI Responses API（适配 client.responses.create / POST /v1/responses）
+# 选项 B：多模态图片翻译（OpenAI image_url 规范，支持 base64 data URL）
+curl https://index-translate.bilibili.com/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "User-Agent: Index-Translate-Client/1.0" \
+  -d '{
+    "model": "Index-Translate-35B-A3B",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {"type": "text", "text": "请将图片中的英文翻译为中文。"},
+          {"type": "image_url", "image_url": {"url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="}}
+        ]
+      }
+    ]
+  }'
+
+# 选项 C：最新 OpenAI Responses API（适配 client.responses.create / POST /v1/responses）
 curl https://index-translate.bilibili.com/v1/responses \
   -H "Content-Type: application/json" \
   -d '{
@@ -108,6 +129,11 @@ curl https://index-translate.bilibili.com/v1/responses \
     "input": "请将以下文本翻译为英语，直接输出翻译结果，不要进行任何解释。\n\n你好，世界。"
   }'
 ```
+
+> [!TIP]
+> 🖼️ **多模态图片翻译开箱即用（支持 Web Demo / Python 脚本 / API）！**  
+> 基于原生视觉编码器，**零 OCR 依赖**，高保真还原版式与图文语境。  
+> 👉 **[【图文使用教程】多模态图片翻译完整指南（含 API 调用、本地部署与实测案例）](docs/image_translate_zh.md)**
 
 > [!TIP]
 > 🌐 **想要在浏览器一键双语畅读网页？沉浸式翻译 (Immersive Translate) 开箱即用（支持 Windows / macOS / Linux）！**
@@ -232,6 +258,18 @@ python inference/llm/syllable_translate.py \
 ```
 
 公告标题被翻译，用户指定的话题标签保持原样。[体验文本翻译](https://index-translate.bilibili.com/?p=/site/translate.html&lang=zh)。
+
+### 多模态图片翻译（Vision）：软件 UI 与技术图表（零 OCR 依赖）
+
+**要求：** 识别图像中的文字，深度结合视觉上下文与版面布局，端到端直接输出高质量译文。
+
+| 图像类型 | 图像源文字 (英文) | Index-Translate-35B 译文 (中文) | 优势特性 |
+|---|---|---|---|
+| **软件设置截图** | "Enable hardware-accelerated GPU scheduling (requires restart)" | 启用硬件加速 GPU 计划（需要重启） | 精准识别系统 UI 选项，语义贴切 |
+| **技术流程图** | "Client -> Load Balancer -> Worker Pool (Least-Conn Routing)" | 客户端 → 负载均衡器 → 工作节点池（最小连接数路由） | 识别流程指向，保留系统架构术语 |
+| **实景街道路牌** | "Pedestrian Crossing Ahead · Speed Limit 30 mph" | 前方行人过街通道 · 限速 30 英里/小时 | 复杂自然实景抗畸变，度量单位标准转换 |
+
+无需配置任何 OCR 工具链，直接在 [在线 Demo](https://index-translate.bilibili.com/?p=/site/translate.html) 粘贴或上传图片即可体验。详细教程见 [多模态图片翻译指南](docs/image_translate_zh.md)。
 
 ### 翻出社区表达中的意思
 

@@ -24,13 +24,19 @@ Usage:
     # 6. Read from stdin
     cat document.txt | python call_api.py -t en
 
-    # 7. Start local OpenAI-compatible bridge proxy (e.g. for Immersive Translate / 沉浸式翻译)
+    # 7. Multimodal image translation (translate text inside screenshot / photo / sign)
+    python call_api.py --image screenshot.png -t zh
+    python call_api.py "翻译图片中的标题与主要内容" --image paper.jpg -t zh
+
+    # 8. Start local OpenAI-compatible bridge proxy (e.g. for Immersive Translate / 沉浸式翻译)
     python call_api.py --serve              # binds 127.0.0.1:8080; add --host 0.0.0.0 to expose on LAN
 """
 
 import argparse
+import base64
 import http.server
 import json
+import mimetypes
 import os
 import sys
 import time
@@ -39,6 +45,34 @@ import urllib.request
 
 DEFAULT_API_BASE = "https://index-translate.bilibili.com/v1"
 DEFAULT_MODEL = "Index-Translate-35B-A3B"
+
+
+def encode_image_to_data_url(image_path_or_url: str) -> str:
+    """Convert local image file or URL into standard OpenAI base64 data URL."""
+    image_str = image_path_or_url.strip()
+    if image_str.startswith(("http://", "https://", "data:image/")):
+        return image_str
+
+    if not os.path.isfile(image_str):
+        raise FileNotFoundError(f"Image file not found: {image_str}")
+
+    mime, _ = mimetypes.guess_type(image_str)
+    if not mime:
+        ext = os.path.splitext(image_str)[1].lower()
+        mime_map = {
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".webp": "image/webp",
+            ".gif": "image/gif",
+            ".bmp": "image/bmp",
+        }
+        mime = mime_map.get(ext, "image/png")
+
+    with open(image_str, "rb") as f:
+        b64_data = base64.b64encode(f.read()).decode("ascii")
+    return f"data:{mime};base64,{b64_data}"
+
 
 # Language code -> Chinese name, as used by translate.py; kept in sync so both entry
 # points build byte-identical prompts.
@@ -393,6 +427,7 @@ def main():
     ap.add_argument("--instruction", "-i", default="", help="Instruction or formatting constraint")
     ap.add_argument("--glossary", "-g", default="", help="Glossary pairs, e.g. 'term1:target1, term2:target2'")
     ap.add_argument("--api-base", default=DEFAULT_API_BASE, help=f"API Base URL (default: {DEFAULT_API_BASE})")
+    ap.add_argument("--image", "--img", default=None, help="Path or URL to an image for multimodal image translation")
     ap.add_argument("--max-tokens", type=int, default=1024, help="Max tokens to generate (default: 1024)")
     ap.add_argument("--temperature", type=float, default=0.0, help="Sampling temperature (default: 0.0 for greedy decoding)")
     ap.add_argument("--stream", action="store_true", help="Stream translation tokens (SSE)")
@@ -418,18 +453,59 @@ def main():
         run_proxy_server(port=args.serve_port, api_base=args.api_base, host=args.host)
         return
 
-    text = args.text if args.text is not None else sys.stdin.read()
-    text = text.strip()
-    if not text:
-        ap.error("Empty input text")
+    if args.text is not None:
+        text = args.text.strip()
+    elif not sys.stdin.isatty():
+        text = sys.stdin.read().strip()
+    else:
+        text = ""
 
-    prompt = build_prompt(
-        text=text,
-        target_lang=args.target,
-        source_lang=args.source,
-        instruction=args.instruction,
-        glossary=args.glossary,
-    )
+    if not text and not args.image:
+        ap.error("Empty input text (or provide --image)")
+
+    if args.image:
+        try:
+            data_url = encode_image_to_data_url(args.image)
+        except Exception as e:
+            sys.stderr.write(f"Image load error: {e}\n")
+            sys.exit(1)
+
+        tgt_name = LANG_NAMES.get(args.target.lower(), args.target)
+        if text:
+            prompt_text = text
+            if args.instruction or args.glossary:
+                prompt_text = build_prompt(
+                    text=text,
+                    target_lang=args.target,
+                    source_lang=args.source,
+                    instruction=args.instruction,
+                    glossary=args.glossary,
+                )
+        else:
+            default_prompt = f"请将图片中的文本翻译为{tgt_name}，直接输出翻译结果，不要进行任何解释。"
+            if args.instruction or args.glossary:
+                prompt_text = build_prompt(
+                    text="【待翻译图片中的文本】",
+                    target_lang=args.target,
+                    source_lang=args.source,
+                    instruction=args.instruction,
+                    glossary=args.glossary,
+                )
+            else:
+                prompt_text = default_prompt
+
+        prompt = [
+            {"type": "text", "text": prompt_text},
+            {"type": "image_url", "image_url": {"url": data_url}},
+        ]
+    else:
+        prompt = build_prompt(
+            text=text,
+            target_lang=args.target,
+            source_lang=args.source,
+            instruction=args.instruction,
+            glossary=args.glossary,
+        )
 
     call_completion(
         api_base=args.api_base,

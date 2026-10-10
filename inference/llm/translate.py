@@ -36,10 +36,40 @@ Override with --base-url / --model, or env OPENAI_BASE_URL / INDEX_MODEL.
 """
 
 import argparse
+import base64
 import json
+import mimetypes
 import os
 import sys
 from urllib.parse import urlparse
+
+
+def encode_image_to_data_url(image_path_or_url: str) -> str:
+    """Convert local image file or URL into standard OpenAI base64 data URL."""
+    image_str = image_path_or_url.strip()
+    if image_str.startswith(("http://", "https://", "data:image/")):
+        return image_str
+
+    if not os.path.isfile(image_str):
+        raise FileNotFoundError(f"Image file not found: {image_str}")
+
+    mime, _ = mimetypes.guess_type(image_str)
+    if not mime:
+        ext = os.path.splitext(image_str)[1].lower()
+        mime_map = {
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".webp": "image/webp",
+            ".gif": "image/gif",
+            ".bmp": "image/bmp",
+        }
+        mime = mime_map.get(ext, "image/png")
+
+    with open(image_str, "rb") as f:
+        b64_data = base64.b64encode(f.read()).decode("ascii")
+    return f"data:{mime};base64,{b64_data}"
+
 
 def make_client(base_url: str, api_key: str):
     """OpenAI client; handle proxies properly for local or internal servers."""
@@ -53,13 +83,14 @@ def make_client(base_url: str, api_key: str):
     host = urlparse(base_url).hostname or ""
     proxy = os.environ.get("OPENAI_PROXY") or os.environ.get("ALL_PROXY") or os.environ.get("all_proxy")
 
+    default_headers = {"User-Agent": "Index-Translate-Client/1.0"}
     if host in ("127.0.0.1", "localhost", "::1"):
-        return OpenAI(base_url=base_url, api_key=api_key,
+        return OpenAI(base_url=base_url, api_key=api_key, default_headers=default_headers,
                       http_client=httpx.Client(trust_env=False))
     if proxy:
-        return OpenAI(base_url=base_url, api_key=api_key,
+        return OpenAI(base_url=base_url, api_key=api_key, default_headers=default_headers,
                       http_client=httpx.Client(proxy=proxy, trust_env=False))
-    return OpenAI(base_url=base_url, api_key=api_key)
+    return OpenAI(base_url=base_url, api_key=api_key, default_headers=default_headers)
 
 
 # Language code -> Chinese name, as used by the training-side prompt builder.
@@ -266,6 +297,7 @@ def main() -> None:
                     help="general task instruction or constraint (formatted into instTrans constraints)")
     ap.add_argument("--raw-prompt", action="store_true",
                     help="send input text directly as raw prompt without template wrapping")
+    ap.add_argument("--image", "--img", default=None, help="Path or URL to an image for multimodal image translation")
     ap.add_argument("--model", "-m", default=os.environ.get("INDEX_MODEL", DEFAULT_MODEL))
     ap.add_argument("--base-url", default=os.environ.get("OPENAI_BASE_URL", "http://127.0.0.1:8000/v1"))
     ap.add_argument("--api-key", default=os.environ.get("OPENAI_API_KEY", "EMPTY"))
@@ -273,29 +305,75 @@ def main() -> None:
     ap.add_argument("--temperature", type=float, default=0.0)
     args = ap.parse_args()
 
-    text = args.text if args.text is not None else sys.stdin.read()
-    text = text.strip()
-    if not text:
-        ap.error("empty input text")
-
-    if args.raw_prompt:
-        prompt_content = text
+    if args.text is not None:
+        text = args.text.strip()
+    elif not sys.stdin.isatty():
+        text = sys.stdin.read().strip()
     else:
-        prompt_content = trans_prompt(
-            text=text,
-            target_lang=args.target,
-            source_lang=args.source,
-            hard_constraints=args.hard,
-            soft_constraints=args.soft,
-            glossary=args.glossary,
-            instruction=args.instruction,
-            genre=args.genre,
-        )
+        text = ""
+
+    if not text and not args.image:
+        ap.error("empty input text (or provide --image)")
+
+    if args.image:
+        try:
+            data_url = encode_image_to_data_url(args.image)
+        except Exception as e:
+            sys.stderr.write(f"Image load error: {e}\n")
+            sys.exit(1)
+
+        tgt_name = LANG_NAMES.get(args.target.lower(), args.target)
+        if text:
+            prompt_text = text if args.raw_prompt else trans_prompt(
+                text=text,
+                target_lang=args.target,
+                source_lang=args.source,
+                hard_constraints=args.hard,
+                soft_constraints=args.soft,
+                glossary=args.glossary,
+                instruction=args.instruction,
+                genre=args.genre,
+            )
+        else:
+            default_prompt = f"请将图片中的文本翻译为{tgt_name}，直接输出翻译结果，不要进行任何解释。"
+            if args.hard or args.soft or args.glossary or args.instruction:
+                prompt_text = trans_prompt(
+                    text="【待翻译图片中的文本】",
+                    target_lang=args.target,
+                    source_lang=args.source,
+                    hard_constraints=args.hard,
+                    soft_constraints=args.soft,
+                    glossary=args.glossary,
+                    instruction=args.instruction,
+                    genre=args.genre,
+                )
+            else:
+                prompt_text = default_prompt
+
+        messages_content = [
+            {"type": "text", "text": prompt_text},
+            {"type": "image_url", "image_url": {"url": data_url}},
+        ]
+    else:
+        if args.raw_prompt:
+            prompt_content = text
+        else:
+            prompt_content = trans_prompt(
+                text=text,
+                target_lang=args.target,
+                source_lang=args.source,
+                hard_constraints=args.hard,
+                soft_constraints=args.soft,
+                glossary=args.glossary,
+                instruction=args.instruction,
+                genre=args.genre,
+            )
+        messages_content = prompt_content
 
     client = make_client(args.base_url, args.api_key)
     resp = client.chat.completions.create(
         model=args.model,
-        messages=[{"role": "user", "content": prompt_content}],
+        messages=[{"role": "user", "content": messages_content}],
         temperature=args.temperature,
         max_tokens=args.max_tokens,
         extra_body={"chat_template_kwargs": {"enable_thinking": False}},
