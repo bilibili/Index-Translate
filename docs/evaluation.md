@@ -4,7 +4,7 @@
 
 Full model comparisons, method summaries, and evaluation notes. Compare each metric within its own evaluation setting; the radar uses demo category aggregates rather than individual benchmark scores.
 
-### Text translation (Index-Translate)
+### Text & Multimodal translation (Index-Translate)
 
 Multilingual text translation with instruction following across 150 languages. For the evaluated 2B/9B models, post-training combines general-translation, instruction-following, and meme-translation specialists via parameter interpolation (model soup, weights 0.8/0.1/0.1) plus targeted multi-teacher on-policy distillation (MOPD).
 
