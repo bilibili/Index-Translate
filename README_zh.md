@@ -34,7 +34,7 @@ Index-Translate 是基于 Qwen3.5 构建的多语言翻译模型家族。文本�
 
 ## 最新动态
 
-- **2026-10-10：** 全面开放多模态图片翻译（Vision）支持！免费公网 API、在线 Demo、Python 调用脚本（[call_api.py](inference/llm/call_api.py)）与 GGUF mmproj 权重同步支持图像输入，零外部 OCR 依赖。详见 [图文教程](docs/image_translate_zh.md)。
+- **2026-10-10：** 全面开放多模态图片翻译（Vision）支持！**Index-Translate 全系列（2B / 9B / 35B-A3B）**均原生支持端到端图文翻译。免费公网 API、在线 Demo、Python 调用脚本（[call_api.py](inference/llm/call_api.py)）与 GGUF mmproj 权重同步支持图像输入，零外部 OCR 依赖。详见 [图文教程](docs/image_translate_zh.md)。
 - **2026-10-04：** 正式开放 35B-A3B 免费公网 API 接口（[index-translate.bilibili.com/v1](https://index-translate.bilibili.com)），完全兼容 OpenAI 规范。支持通过 [call_api.py](inference/llm/call_api.py) 免 GPU 快速调用。
 - **2026-10-04：** 发布四个 [Index-Translate benchmarks](#benchmarks)；Hugging Face 提供数据／元数据，GitHub 同步评测脚本和运行说明。
 - **2026-10-03：** 发布全家族官方量化版本（Hugging Face 与 ModelScope 同步开放）—— 包含适用于 llama.cpp 本地推理的 **GGUF**（含原生视觉 mmproj 权重），以及适用于 vLLM 部署的 **FP8**（W8A8）与 **NVFP4**（W4A4，面向 Blackwell GPU）。
@@ -84,8 +84,10 @@ Index-Translate 是基于 Qwen3.5 构建的多语言翻译模型家族。文本�
 # 1. 命令行快速翻译（零外部依赖，标准库即开即用）
 python inference/llm/call_api.py "你好，世界。今天天气不错，我们去公园散步吧。" --target en
 
-# 2. 多模态图片翻译（无需 OCR，直接识别截图/照片/海报文字并翻译为指定语言）
-python inference/llm/call_api.py --image path/to/screenshot.png --target zh
+# 2. 多模态图片翻译（全系列 2B / 9B / 35B 均原生支持，零 OCR 依赖，直接识别截图/照片/海报文字并翻译）
+python inference/llm/call_api.py --image path/to/screenshot.png --target zh               # 默认 35B 旗舰
+python inference/llm/call_api.py --image photo.jpg --target zh -m Index-Translate-2B    # 2B 端侧轻量
+python inference/llm/call_api.py --image diagram.png --target en -m Index-Translate-9B   # 9B 工作站均衡
 
 # 3. 沉浸式翻译（Immersive Translate）等浏览器插件配置（需启动本地代理）：
 # 浏览器扩展受同源策略 (CORS) 与请求头限制，且需强制关闭思考输出，请在本地启动代理服务：
@@ -261,15 +263,15 @@ python inference/llm/syllable_translate.py \
 
 ### 多模态图片翻译（Vision）：软件 UI 与技术图表（零 OCR 依赖）
 
-**要求：** 识别图像中的文字，深度结合视觉上下文与版面布局，端到端直接输出高质量译文。
+**要求：** 识别图像中的文字，深度结合视觉上下文与版面布局，全系列（2B / 9B / 35B）端到端直接输出高质量译文。
 
-| 图像类型 | 图像源文字 (英文) | Index-Translate-35B 译文 (中文) | 优势特性 |
+| 图像类型 | 图像源文字 (英文) | Index-Translate (2B / 9B / 35B) 译文 (中文) | 优势特性 |
 |---|---|---|---|
 | **软件设置截图** | "Enable hardware-accelerated GPU scheduling (requires restart)" | 启用硬件加速 GPU 计划（需要重启） | 精准识别系统 UI 选项，语义贴切 |
 | **技术流程图** | "Client -> Load Balancer -> Worker Pool (Least-Conn Routing)" | 客户端 → 负载均衡器 → 工作节点池（最小连接数路由） | 识别流程指向，保留系统架构术语 |
 | **实景街道路牌** | "Pedestrian Crossing Ahead · Speed Limit 30 mph" | 前方行人过街通道 · 限速 30 英里/小时 | 复杂自然实景抗畸变，度量单位标准转换 |
 
-无需配置任何 OCR 工具链，直接在 [在线 Demo](https://index-translate.bilibili.com/?p=/site/translate.html) 粘贴或上传图片即可体验。详细教程见 [多模态图片翻译指南](docs/image_translate_zh.md)。
+全系列（2B / 9B / 35B）均提供对应 GGUF `mmproj` 视觉权重，无需配置任何 OCR 工具链，直接在 [在线 Demo](https://index-translate.bilibili.com/?p=/site/translate.html) 粘贴或上传图片即可体验。详细教程见 [多模态图片翻译指南](docs/image_translate_zh.md)。
 
 ### 翻出社区表达中的意思
 

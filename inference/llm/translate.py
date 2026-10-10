@@ -323,32 +323,34 @@ def main() -> None:
             sys.exit(1)
 
         tgt_name = LANG_NAMES.get(args.target.lower(), args.target)
-        if text:
-            prompt_text = text if args.raw_prompt else trans_prompt(
-                text=text,
-                target_lang=args.target,
-                source_lang=args.source,
-                hard_constraints=args.hard,
-                soft_constraints=args.soft,
-                glossary=args.glossary,
-                instruction=args.instruction,
-                genre=args.genre,
-            )
+        has_source = bool(args.source) and args.source.lower() not in ("auto", "")
+        src_name = LANG_NAMES.get(args.source.lower(), args.source) if has_source else ""
+
+        base_prompt = (
+            f"请将图片中的{src_name}文本翻译为{tgt_name}，直接输出翻译结果，不要进行任何解释。"
+            if src_name
+            else f"请将图片中的文本翻译为{tgt_name}，直接输出翻译结果，不要进行任何解释。"
+        )
+
+        if text or args.hard or args.soft or args.glossary or args.instruction:
+            extras = []
+            if text:
+                extras.append(f"【参考文本/关注内容】\n{text}")
+            if args.instruction:
+                extras.append(f"【指令要求】{args.instruction}")
+            if args.hard:
+                for h in args.hard:
+                    extras.append(f"【硬性要求】{h}")
+            if args.soft:
+                for s in args.soft:
+                    extras.append(f"【软性要求】{s}")
+            if args.glossary:
+                terms = parse_glossary_terms(args.glossary)
+                if terms:
+                    extras.append(f"【专名/术语对照】{'、'.join(terms)}")
+            prompt_text = f"{base_prompt}\n\n" + "\n\n".join(extras) + "\n\n只输出翻译结果，不要进行任何解释。"
         else:
-            default_prompt = f"请将图片中的文本翻译为{tgt_name}，直接输出翻译结果，不要进行任何解释。"
-            if args.hard or args.soft or args.glossary or args.instruction:
-                prompt_text = trans_prompt(
-                    text="【待翻译图片中的文本】",
-                    target_lang=args.target,
-                    source_lang=args.source,
-                    hard_constraints=args.hard,
-                    soft_constraints=args.soft,
-                    glossary=args.glossary,
-                    instruction=args.instruction,
-                    genre=args.genre,
-                )
-            else:
-                prompt_text = default_prompt
+            prompt_text = base_prompt
 
         messages_content = [
             {"type": "text", "text": prompt_text},

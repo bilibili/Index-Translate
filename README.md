@@ -32,7 +32,7 @@ The radar includes **35B-A3B (preview), 9B, and 2B**, with fixed per-axis min–
 
 ## News
 
-- **2026-10-10:** launched official **Multimodal Image Translation** support! The free public API, Web Demo, Python script ([call_api.py](inference/llm/call_api.py)), and GGUF `mmproj` weights natively support image input with zero external OCR dependencies. See the [Tutorial Guide](docs/image_translate.md).
+- **2026-10-10:** launched official **Multimodal Image Translation** support! The full family (**Index-Translate 2B / 9B / 35B-A3B**) natively supports end-to-end image translation. The free public API, Web Demo, Python script ([call_api.py](inference/llm/call_api.py)), and GGUF `mmproj` weights all support image input with zero external OCR dependencies. See the [Tutorial Guide](docs/image_translate.md).
 - **2026-10-04:** released free public API endpoints on [index-translate.bilibili.com/v1](https://index-translate.bilibili.com) for Index-Translate-35B-A3B. Fully OpenAI-compatible. Try it with [call_api.py](inference/llm/call_api.py).
 - **2026-10-04:** released four [Index-Translate benchmarks](#benchmarks), with datasets/metadata on Hugging Face and evaluation scripts and guides on GitHub.
 - **2026-10-03:** released official quantized builds across the family on Hugging Face and ModelScope — **GGUF** for llama.cpp local inference (including visual `mmproj` weights), alongside **FP8** (W8A8) and **NVFP4** (W4A4, Blackwell-optimized) for vLLM serving.
@@ -82,8 +82,10 @@ You can call our free online API directly without local GPUs. We recommend using
 # 1. Quick command-line translation (zero dependencies, works out-of-the-box)
 python inference/llm/call_api.py "你好，世界。今天天气不错，我们去公园散步吧。" --target en
 
-# 2. Multimodal image translation (translate text inside screenshot / photo / poster / sign)
-python inference/llm/call_api.py --image path/to/screenshot.png --target zh
+# 2. Multimodal image translation (all sizes 2B / 9B / 35B natively supported, zero OCR dependency)
+python inference/llm/call_api.py --image path/to/screenshot.png --target zh               # Default 35B flagship
+python inference/llm/call_api.py --image photo.jpg --target zh -m Index-Translate-2B    # 2B edge lightweight
+python inference/llm/call_api.py --image diagram.png --target en -m Index-Translate-9B   # 9B workstation balanced
 
 # 3. Local proxy bridge for browser extensions (e.g. Immersive Translate / 沉浸式翻译)
 # Browser extensions require a local bridge proxy due to CORS/WAF headers and thinking tag suppression:
@@ -259,15 +261,15 @@ The title is translated while the requested hashtag remains unchanged. [Try text
 
 ### Multimodal Image Translation (Vision): UI & Diagrams (Zero OCR Dependency)
 
-**Prompt:** Translate English text inside images into natural Chinese, deeply integrating visual layout and context without external OCR tools.
+**Prompt:** Translate English text inside images into natural Chinese, deeply integrating visual layout and context without external OCR tools across all model scales (2B / 9B / 35B).
 
-| Image Category | English Source Text in Image | Index-Translate-35B Output (Chinese) | Key Highlight |
+| Image Category | English Source Text in Image | Index-Translate (2B / 9B / 35B) Output (Chinese) | Key Highlight |
 |---|---|---|---|
 | **Software Settings UI** | "Enable hardware-accelerated GPU scheduling (requires restart)" | 启用硬件加速 GPU 计划（需要重启） | Accurate system terminology and clean segmentation |
 | **Technical Flowchart** | "Client -> Load Balancer -> Worker Pool (Least-Conn Routing)" | 客户端 → 负载均衡器 → 工作节点池（最小连接数路由） | Preserves architectural concepts and flow directions |
 | **Physical Street Sign** | "Pedestrian Crossing Ahead · Speed Limit 30 mph" | 前方行人过街通道 · 限速 30 英里/小时 | Robust against scene distortions and standard unit conversion |
 
-Try it directly by uploading or pasting images on the [Online Demo](https://index-translate.bilibili.com/?p=/site/translate.html). See the [Image Translation Guide](docs/image_translate.md) for full details.
+All three sizes (2B / 9B / 35B) provide companion GGUF `mmproj` vision weights. Try it directly by uploading or pasting images on the [Online Demo](https://index-translate.bilibili.com/?p=/site/translate.html). See the [Image Translation Guide](docs/image_translate.md) for full details.
 
 ### Keep the meaning of a community expression
 

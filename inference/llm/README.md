@@ -37,37 +37,45 @@ Call the online **Index-Translate-35B-A3B** model without a local GPU using our 
 # Quick command-line translation (stdlib-only; supports -t language, --stream, -g glossary, --instruction)
 python call_api.py "你好，世界。" --target en
 
-# Multimodal image translation (translate text inside screenshot / photo / poster / sign)
-python call_api.py --image screenshot.png --target zh
+# Multimodal image translation (all sizes 2B / 9B / 35B natively supported)
+python call_api.py --image screenshot.png --target zh               # Default 35B flagship
+python call_api.py --image photo.jpg --target zh -m Index-Translate-2B    # 2B edge lightweight
+python call_api.py --image diagram.png --target en -m Index-Translate-9B   # 9B workstation balanced
 
 # Local bridge proxy for browser extensions (Windows users can double-click run_proxy_windows.bat)
 python call_api.py --serve
 ```
 
 > 📖 **Related Guides**:
-> - 🖼️ **[【Guide】Multimodal Image Translation Tutorial](../../docs/image_translate.md)**: Zero OCR dependency, end-to-end image-to-text translation.
+> - 🖼️ **[【Guide】Multimodal Image Translation Tutorial](../../docs/image_translate.md)**: Zero OCR dependency, end-to-end image-to-text translation across the full 2B / 9B / 35B family.
 > - 🌐 **[【Guide】Immersive Translate Configuration Tutorial](../../docs/immersive_translate.md)**: Step-by-step browser extension setup.
 
 ### Multimodal Image Translation (Vision / mmproj)
 
-Index-Translate natively supports multimodal image-to-text translation using its visual encoder (`mmproj`), **requiring zero external OCR tools**:
+Index-Translate full family (**2B / 9B / 35B**) natively supports multimodal image-to-text translation using its visual encoder (`mmproj`), **requiring zero external OCR tools**:
 
 ```bash
-# 1. Translate image via free public API (supports PNG, JPG, WEBP, BMP, local path or URL):
+# 1. Translate image via free public API (switch between 2B / 9B / 35B freely):
 python call_api.py --image path/to/screenshot.png --target zh
+python call_api.py --image photo.jpg --target zh -m Index-Translate-2B
+python call_api.py --image diagram.png --target en -m Index-Translate-9B
 
 # 2. Image translation with custom prompt / constraints:
 python call_api.py "Translate titles and key points in the image" --image slide.jpg --target en \
     --instruction "Maintain professional business presentation tone"
 
-# 3. Self-hosted deployment using llama-server with mmproj:
-llama-server \
-  -m Index-Translate-35B-A3B-preview.Q8_0.gguf \
-  --mmproj Index-Translate-35B-A3B-preview.mmproj-Q8_0.gguf \
-  -ngl 99 -c 65536 --port 8000 --alias Index-Translate-35B-A3B
+# 3. Self-hosted deployment using llama-server with mmproj (2B / 9B / 35B):
+# 2B Lightweight on-device:
+llama-server -m Index-Translate-2B.Q4_K_M.gguf --mmproj Index-Translate-2B.mmproj-Q8_0.gguf -ngl 99 -c 16384 --port 8000 --alias Index-Translate-2B
+
+# 9B Workstation balanced (Recommended for RTX 3060/4060):
+llama-server -m Index-Translate-9B.Q4_K_M.gguf --mmproj Index-Translate-9B.mmproj-Q8_0.gguf -ngl 99 -c 32768 --port 8000 --alias Index-Translate-9B
+
+# 35B Flagship preview (Recommended for 24GB VRAM):
+llama-server -m Index-Translate-35B-A3B-preview.Q4_K_M.gguf --mmproj Index-Translate-35B-A3B-preview.mmproj-Q8_0.gguf -ngl 99 -c 65536 --port 8000 --alias Index-Translate-35B-A3B --chat-template-kwargs '{"enable_thinking":false}' --reasoning off
 
 # 4. Local Python script invocation:
-python translate.py --image document.jpg --target zh
+python translate.py --image document.jpg --target zh -m Index-Translate-9B
 ```
 
 ### Self-Hosted Local Model Invocation

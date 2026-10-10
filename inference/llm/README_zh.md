@@ -35,37 +35,45 @@ pip install -U vllm     # 需要带 Qwen3.5 支持的版本（实测 0.29）
 # 命令行快速调用（标准库即开即用，支持 -t 指定语种、--stream 流式、-g 术语表、--instruction 约束等）
 python call_api.py "你好，世界。" --target en
 
-# 多模态图片翻译（无需本地 GPU，直接识别并翻译图片中的文字）
-python call_api.py --image screenshot.png --target zh
+# 多模态图片翻译（全系列 2B / 9B / 35B 均原生支持）
+python call_api.py --image screenshot.png --target zh               # 默认 35B 旗舰
+python call_api.py --image photo.jpg --target zh -m Index-Translate-2B    # 2B 端侧轻量
+python call_api.py --image diagram.png --target en -m Index-Translate-9B   # 9B 工作站均衡
 
 # 沉浸式翻译（Immersive Translate）等浏览器插件本地代理服务（Windows 用户可直接双击运行 run_proxy_windows.bat）
 python call_api.py --serve
 ```
 
 > 📖 **相关教程指南**：
-> - 🖼️ **[【图文教程】多模态图片翻译完整指南](../../docs/image_translate_zh.md)**：零 OCR 依赖，支持截图、海报、路牌、漫画与表格图像端到端翻译。
+> - 🖼️ **[【图文教程】多模态图片翻译完整指南](../../docs/image_translate_zh.md)**：零 OCR 依赖，全系列（2B / 9B / 35B）支持截图、海报、路牌、漫画与表格图像端到端翻译。
 > - 🌐 **[【图文教程】沉浸式翻译配置指南](../../docs/immersive_translate_zh.md)**：浏览器插件跨域/思考词过滤与图文配置步骤。
 
 ### 多模态图片翻译（Vision / Image Translation）
 
-模型支持基于原生视觉编码器（Visual Encoder `mmproj`）的端到端图像翻译，**无需依赖任何外部 OCR 引擎**，直接理解并翻译图像中的文本与版式：
+Index-Translate 全系列（**2B / 9B / 35B**）均原生支持基于内置视觉编码器（Visual Encoder `mmproj`）的端到端图像翻译，**无需依赖任何外部 OCR 引擎**，直接理解并翻译图像中的文本与版式：
 
 ```bash
-# 1. 免费公网 API 调用图片翻译（支持 PNG / JPG / WEBP / BMP，本地文件或 URL 均可）：
+# 1. 免费公网 API 调用图片翻译（全尺寸 2B / 9B / 35B 支持自由切换）：
 python call_api.py --image path/to/screenshot.png --target zh
+python call_api.py --image photo.jpg --target zh -m Index-Translate-2B
+python call_api.py --image diagram.png --target en -m Index-Translate-9B
 
 # 2. 结合自定义指令约束翻译图片：
 python call_api.py "翻译图片中的标题与正文" --image slide.jpg --target en \
     --instruction "保持商务演讲口吻，专有名词规范输出"
 
-# 3. 本地私有化部署 llama-server 挂载视觉权重：
-llama-server \
-  -m Index-Translate-35B-A3B-preview.Q8_0.gguf \
-  --mmproj Index-Translate-35B-A3B-preview.mmproj-Q8_0.gguf \
-  -ngl 99 -c 65536 --port 8000 --alias Index-Translate-35B-A3B
+# 3. 本地私有化部署 llama-server 挂载视觉投影权重（以 2B/9B/35B 为例）：
+# 2B 轻量端侧（超低资源消耗）：
+llama-server -m Index-Translate-2B.Q4_K_M.gguf --mmproj Index-Translate-2B.mmproj-Q8_0.gguf -ngl 99 -c 16384 --port 8000 --alias Index-Translate-2B
+
+# 9B 均衡主力（消费级显卡推荐）：
+llama-server -m Index-Translate-9B.Q4_K_M.gguf --mmproj Index-Translate-9B.mmproj-Q8_0.gguf -ngl 99 -c 32768 --port 8000 --alias Index-Translate-9B
+
+# 35B 复杂图表旗舰（大显存推荐）：
+llama-server -m Index-Translate-35B-A3B-preview.Q4_K_M.gguf --mmproj Index-Translate-35B-A3B-preview.mmproj-Q8_0.gguf -ngl 99 -c 65536 --port 8000 --alias Index-Translate-35B-A3B --chat-template-kwargs '{"enable_thinking":false}' --reasoning off
 
 # 4. 本地推理脚本调用图片翻译：
-python translate.py --image document.jpg --target zh
+python translate.py --image document.jpg --target zh -m Index-Translate-9B
 ```
 
 ### 本地私有化部署模型调用

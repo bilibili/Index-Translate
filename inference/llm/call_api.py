@@ -24,9 +24,11 @@ Usage:
     # 6. Read from stdin
     cat document.txt | python call_api.py -t en
 
-    # 7. Multimodal image translation (translate text inside screenshot / photo / sign)
+    # 7. Multimodal image translation (all sizes 2B / 9B / 35B supported)
     python call_api.py --image screenshot.png -t zh
-    python call_api.py "翻译图片中的标题与主要内容" --image paper.jpg -t zh
+    python call_api.py --image photo.jpg -t zh -m Index-Translate-2B    # Lightweight on-device / fast
+    python call_api.py --image diagram.png -t en -m Index-Translate-9B   # Workstation / balanced
+    python call_api.py --image paper.jpg -t zh -m Index-Translate-35B-A3B # Flagship / complex layouts
 
     # 8. Start local OpenAI-compatible bridge proxy (e.g. for Immersive Translate / 沉浸式翻译)
     python call_api.py --serve              # binds 127.0.0.1:8080; add --host 0.0.0.0 to expose on LAN
@@ -471,28 +473,28 @@ def main():
             sys.exit(1)
 
         tgt_name = LANG_NAMES.get(args.target.lower(), args.target)
-        if text:
-            prompt_text = text
-            if args.instruction or args.glossary:
-                prompt_text = build_prompt(
-                    text=text,
-                    target_lang=args.target,
-                    source_lang=args.source,
-                    instruction=args.instruction,
-                    glossary=args.glossary,
-                )
+        has_source = bool(args.source) and args.source.lower() not in ("auto", "")
+        src_name = LANG_NAMES.get(args.source.lower(), args.source) if has_source else ""
+
+        base_prompt = (
+            f"请将图片中的{src_name}文本翻译为{tgt_name}，直接输出翻译结果，不要进行任何解释。"
+            if src_name
+            else f"请将图片中的文本翻译为{tgt_name}，直接输出翻译结果，不要进行任何解释。"
+        )
+
+        if text or args.instruction or args.glossary:
+            extras = []
+            if text:
+                extras.append(f"【参考文本/关注内容】\n{text}")
+            if args.instruction:
+                extras.append(f"【指令要求】{args.instruction}")
+            if args.glossary:
+                terms = parse_glossary_terms(args.glossary)
+                if terms:
+                    extras.append(f"【术语对照】{'、'.join(terms)}")
+            prompt_text = f"{base_prompt}\n\n" + "\n\n".join(extras) + "\n\n只输出翻译结果，不要进行任何解释。"
         else:
-            default_prompt = f"请将图片中的文本翻译为{tgt_name}，直接输出翻译结果，不要进行任何解释。"
-            if args.instruction or args.glossary:
-                prompt_text = build_prompt(
-                    text="【待翻译图片中的文本】",
-                    target_lang=args.target,
-                    source_lang=args.source,
-                    instruction=args.instruction,
-                    glossary=args.glossary,
-                )
-            else:
-                prompt_text = default_prompt
+            prompt_text = base_prompt
 
         prompt = [
             {"type": "text", "text": prompt_text},

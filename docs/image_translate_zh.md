@@ -1,16 +1,25 @@
 # 多模态图片翻译 (Multimodal Image Translation) 使用教程
 
-Index-Translate 原生支持多模态图像翻译能力，基于内置的 **视觉编码器（Visual Encoder `mmproj`）** 实现端到端图像理解与跨语言翻译。
+Index-Translate 全系列模型（**2B / 9B / 35B-A3B**）原生支持多模态图像翻译能力，基于内置的 **视觉编码器（Visual Encoder `mmproj`）** 实现端到端图像理解与跨语言翻译。
 
 > [!TIP]
-> 🌟 **原生视觉端到端，零 OCR 依赖！**  
+> 🌟 **全家族原生视觉端到端，零 OCR 依赖！**  
 > 传统图像翻译通常采用 `OCR 文字识别 -> 文本清洗 -> 翻译模型` 的流水线串联方案，容易出现识别漏字、断句错误、排版顺序错乱等问题。  
-> **Index-Translate 采用原生多模态架构**，视觉特征直接输入模型隐空间，不仅能精准提取文字，更能深度理解图像上下文语境、版面布局和语义层次，速度更快、质量更高。
+> **Index-Translate 采用原生多模态架构**：视觉特征直接投影至语义隐空间，不仅能精准提取文字，更能深度理解图像上下文语境、版面布局和语义层次，速度更快、质量更高。
 
 ---
 
-## 🌟 核心特性与优势
+## 🌟 核心特性与模型规格对比
 
+Index-Translate 针对不同计算设备与业务场景，提供三种不同规模的多模态模型：
+
+| 模型规格 | 视觉投影层 (`mmproj`) | LLM 量化大小 (推荐) | 硬件需求 | 适用场景 |
+| :--- | :--- | :--- | :--- | :--- |
+| **Index-Translate-2B** | 约 360 MB (`Q8_0`) / 670 MB (`f16`) | ~1.5 GB (`Q4_K_M`) | 手机 / 树莓派 / 笔记本轻薄本 / CPU | 端侧移动设备、极速本地截图直译、超低内存开销 |
+| **Index-Translate-9B** | 约 360 MB (`Q8_0`) / 670 MB (`f16`) | ~5.5 GB (`Q4_K_M`) | 8GB+ 消费级显卡 (RTX 3060/4060) / Apple M 系列 | 生产环境兼顾速度与质量的标准主力模型，术语遵循性极佳 |
+| **Index-Translate-35B-A3B** (preview) | 约 583 MB (`Q8_0`) / 1.1 GB (`f16`) | ~20 GB (`Q4_K_M`) / ~35 GB (`Q8_0`) | 24GB 显卡 (RTX 4090/A5000) 或 双卡 | 旗舰预览版，复杂论文架构图、微距包装成分表、倾斜路牌高精度解析 |
+
+### 核心亮点：
 1. **零外部 OCR 工具链**：单模型端到端处理，无需部署 PaddleOCR、Tesseract 或商业 OCR 接口。
 2. **多场景全覆盖**：
    - 💻 **电脑/手机截图**：软件界面、网页长图、报错弹窗、聊天记录。
@@ -27,30 +36,38 @@ Index-Translate 原生支持多模态图像翻译能力，基于内置的 **视�
 无需编写任何代码，直接在网页端使用图片翻译：
 
 1. 打开在线演示网站：[https://index-translate.bilibili.com/?p=/site/translate.html](https://index-translate.bilibili.com/?p=/site/translate.html)
-2. 在左侧原文输入区，点击 **📸 上传图片** 按钮选择本地图片，或者直接在页面上按 **Ctrl+V / Cmd+V** 粘贴剪贴板截图，也可以直接将图片**拖拽**至输入框。
-3. 页面将显示图片缩略预览卡片。选择目标语言（如中文、英语、日语等）。
-4. 点击 **开始翻译**，右侧将实时流式呈现翻译结果！
+2. 选择所需模型（可在 **2B**、**9B** 或 **35B** 之间任意切换体验）。
+3. 在左侧原文输入区，点击 **📸 图片翻译** 按钮选择本地图片，或者直接在页面上按 **Ctrl+V / Cmd+V** 粘贴剪贴板截图，也可以直接将图片**拖拽**至输入框。
+4. 页面将显示图片缩略预览卡片。选择目标语言（如中文、英语、日语、韩语、德语等）。
+5. 点击 **开始翻译**，右侧将实时流式呈现翻译结果！
 
 ---
 
 ## 💻 方式二：使用官方零依赖脚本 `call_api.py`
 
-官方提供的 [`inference/llm/call_api.py`](../inference/llm/call_api.py) 脚本使用 Python 标准库编写，**无需安装任何第三方库**即可直接调用公网免费 35B 视觉翻译 API：
+官方提供的 [`inference/llm/call_api.py`](../inference/llm/call_api.py) 脚本使用 Python 标准库编写，**无需安装任何第三方库**即可直接调用公网免费视觉翻译 API，支持自由指定 2B、9B 或 35B 模型：
 
 ```bash
-# 1. 基础图片翻译（自动识别图片语言，翻译为指定语种，支持本地路径或网络 URL）
+# 1. 基础图片翻译（默认使用 35B 旗舰模型，支持本地路径或网络 URL）
 python inference/llm/call_api.py --image path/to/screenshot.png --target zh
 
-# 2. 翻译带艺术字或海报的图片为英文
-python inference/llm/call_api.py --image poster.jpg --target en
+# 2. 指定使用轻量端侧 2B 模型体验极速图片翻译
+python inference/llm/call_api.py --image photo.jpg --target zh -m Index-Translate-2B
 
-# 3. 带特定指令要求的图片翻译（例如整理要点或指定术语）
+# 3. 指定使用 9B 平衡模型翻译技术架构图
+python inference/llm/call_api.py --image diagram.png --target en -m Index-Translate-9B
+
+# 4. 指定源语种与目标语种（例如从日文图片翻译为中文）
+python inference/llm/call_api.py --image menu_jp.jpg --source ja --target zh
+
+# 5. 带特定指令要求或术语干预的图片翻译
 python inference/llm/call_api.py "提取图片中的核心结论并翻译为中文" \
     --image report_chart.png \
     --target zh \
-    --instruction "请按条目列出关键指标，保留数值与单位"
+    --instruction "请按条目列出关键指标，保留数值与单位" \
+    --glossary "Multi-Head Attention:多头注意力机制"
 
-# 4. 流式输出（实时打字机效果）
+# 6. 流式输出（实时打字机效果）
 python inference/llm/call_api.py --image meme.png --target zh --stream
 ```
 
@@ -63,7 +80,7 @@ Index-Translate 公网 API 完全兼容 OpenAI Chat Completions 多模态规范�
 ### 1. cURL 调用示例
 
 > [!NOTE]
-> 针对公网 WAF 保护，自定义请求请携带标准浏览器或应用 `User-Agent` 请求头。
+> 针对公网 WAF 保护，自定义请求请携带标准 `User-Agent: Index-Translate-Client/1.0` 请求头。
 
 ```bash
 # 将本地图片转为 base64 data URL 并发起请求
@@ -92,7 +109,6 @@ curl -X POST https://index-translate.bilibili.com/v1/chat/completions \
 
 ```python
 import base64
-import httpx
 from openai import OpenAI
 
 # 1. 读取本地图片并转换为 base64
@@ -106,14 +122,14 @@ client = OpenAI(
     default_headers={"User-Agent": "Index-Translate-Client/1.0"}
 )
 
-# 3. 发起多模态聊天补全
+# 3. 发起多模态聊天补全（可选 Index-Translate-2B / Index-Translate-9B / Index-Translate-35B-A3B）
 response = client.chat.completions.create(
-    model="Index-Translate-35B-A3B",
+    model="Index-Translate-9B",
     messages=[
         {
             "role": "user",
             "content": [
-                {"type": "text", "text": "请将图片中的文本翻译为中文。"},
+                {"type": "text", "text": "请将图片中的英文文本翻译为中文，直接输出翻译结果，不要进行任何解释。"},
                 {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64_data}"}}
             ]
         }
@@ -130,39 +146,58 @@ print(response.choices[0].message.content)
 
 ## 🖥️ 方式四：本地私有化部署（llama.cpp / llama-server）
 
-官方发布的 GGUF 仓库已随包提供对应模型的原生视觉权重文件（`*.mmproj-*.gguf`）。
+全系列（2B / 9B / 35B）的官方 GGUF 仓库均已随包提供原生视觉投影层权重文件（`*.mmproj-*.gguf`）。
 
-### 1. 下载模型权重
+### 1. 下载模型权重与视觉投影层
 
-- LLM 主干权重：`Index-Translate-35B-A3B-preview.Q8_0.gguf`（或 Q4_K_M / Q6_K 等位宽）
-- 视觉投影权重：`Index-Translate-35B-A3B-preview.mmproj-Q8_0.gguf`（约 583MB）
-
-下载地址：
-- Hugging Face: [IndexTeam/Index-Translate-35B-A3B-preview-GGUF](https://huggingface.co/IndexTeam/Index-Translate-35B-A3B-preview-GGUF)
-- ModelScope: [IndexTeam/Index-Translate-35B-A3B-preview-GGUF](https://modelscope.cn/models/IndexTeam/Index-Translate-35B-A3B-preview-GGUF)
+| 模型 | Hugging Face 仓库 | ModelScope 仓库 | 核心文件 |
+| :--- | :--- | :--- | :--- |
+| **2B** | [IndexTeam/Index-Translate-2B-GGUF](https://huggingface.co/IndexTeam/Index-Translate-2B-GGUF) | [IndexTeam/Index-Translate-2B-GGUF](https://modelscope.cn/models/IndexTeam/Index-Translate-2B-GGUF) | `Index-Translate-2B.Q4_K_M.gguf`<br>`Index-Translate-2B.mmproj-Q8_0.gguf` |
+| **9B** | [IndexTeam/Index-Translate-9B-GGUF](https://huggingface.co/IndexTeam/Index-Translate-9B-GGUF) | [IndexTeam/Index-Translate-9B-GGUF](https://modelscope.cn/models/IndexTeam/Index-Translate-9B-GGUF) | `Index-Translate-9B.Q4_K_M.gguf`<br>`Index-Translate-9B.mmproj-Q8_0.gguf` |
+| **35B** | [IndexTeam/Index-Translate-35B-A3B-preview-GGUF](https://huggingface.co/IndexTeam/Index-Translate-35B-A3B-preview-GGUF) | [IndexTeam/Index-Translate-35B-A3B-preview-GGUF](https://modelscope.cn/models/IndexTeam/Index-Translate-35B-A3B-preview-GGUF) | `Index-Translate-35B-A3B-preview.Q4_K_M.gguf`<br>`Index-Translate-35B-A3B-preview.mmproj-Q8_0.gguf` |
 
 ### 2. 启动 llama-server 服务
 
-使用 `--mmproj` 参数挂载视觉投影层：
+使用 `--mmproj` 参数挂载视觉投影层。根据机器配置选择模型：
 
+#### 运行 2B 端侧轻量版（极省显存，CPU / 核显即可流畅运行）：
 ```bash
 ./llama-server \
-  -m Index-Translate-35B-A3B-preview.Q8_0.gguf \
+  -m Index-Translate-2B.Q4_K_M.gguf \
+  --mmproj Index-Translate-2B.mmproj-Q8_0.gguf \
+  -ngl 99 \
+  -c 16384 \
+  --port 8000 \
+  --alias Index-Translate-2B
+```
+
+#### 运行 9B 均衡版（推荐消费级 GPU，如 RTX 3060/4060）：
+```bash
+./llama-server \
+  -m Index-Translate-9B.Q4_K_M.gguf \
+  --mmproj Index-Translate-9B.mmproj-Q8_0.gguf \
+  -ngl 99 \
+  -c 32768 \
+  --port 8000 \
+  --alias Index-Translate-9B
+```
+
+#### 运行 35B-A3B 旗舰版（推荐大显存 GPU 或 双卡）：
+```bash
+./llama-server \
+  -m Index-Translate-35B-A3B-preview.Q4_K_M.gguf \
   --mmproj Index-Translate-35B-A3B-preview.mmproj-Q8_0.gguf \
   -ngl 99 \
   -c 65536 \
-  -np 4 \
   --port 8000 \
-  --host 0.0.0.0 \
   --alias Index-Translate-35B-A3B \
   --chat-template-kwargs '{"enable_thinking":false}' \
   --reasoning off
 ```
 
-服务启动后，在本地执行 `inference/llm/translate.py` 即可进行本地离线图像翻译：
-
+服务启动后，执行 `inference/llm/translate.py` 即可进行本地离线多模态图像翻译：
 ```bash
-python inference/llm/translate.py --image test.png --target zh
+python inference/llm/translate.py --image test.png --target zh -m Index-Translate-9B
 ```
 
 ---
@@ -170,37 +205,37 @@ python inference/llm/translate.py --image test.png --target zh
 ## 📚 典型案例展示 (Showcase Cases)
 
 ### 案例 1：英文软件设置截图翻译
-
-- **输入图像**：一段包含各类设置选项的软件 UI 截图（"Enable hardware acceleration", "Automatically check for updates", "Restore default settings"）。
+- **输入图像**：软件 UI 截图（"Enable hardware acceleration", "Automatically check for updates", "Restore default settings"）。
 - **指令**：`将图片中的软件界面文本翻译为中文。`
-- **模型输出**：
+- **全系列输出**：
   > 启用硬件加速  
   > 自动检查更新  
-  > 恢复默认设置
+  > 恢复默认设置  
+- **对比传统 OCR 级联**：传统 OCR 容易在图标与开关间发生断字漏词（如将 Automatically 漏掉或把 Restore 与 default 切碎）。Index-Translate 全家族依托原生视觉编码器无缝识别层级并映射到地道软件术语。
 
-### 案例 2：海外路标与街景照片
-
+### 案例 2：海外道路指示与街景照片
 - **输入图像**：包含 "Pedestrian Crossing Ahead · Speed Limit 30 mph" 的实景道路指示牌。
 - **指令**：`翻译路牌文本。`
-- **模型输出**：
-  > 前方行人过街通道 · 限速 30 英里/小时
+- **全系列输出**：
+  > 前方行人过街通道 · 限速 30 英里/小时  
+- **对比传统 OCR 级联**：传统 OCR 受自然光照反射与斜视视角干扰，常将 `mph` 错误联想为“米/小时”。Index-Translate 具备深厚物理常识与上下文感知，精准还原交通警示。
 
 ### 案例 3：学术论文架构图 / 流程图
-
 - **输入图像**：深度学习模型架构框图，包含 "Multi-Head Attention", "Feed-Forward Network", "Layer Normalization", "Positional Encoding"。
 - **指令**：`请翻译图表中的架构模块名称。`
-- **模型输出**：
+- **全系列输出**：
   > 多头注意力机制  
   > 前馈神经网络  
   > 层归一化  
-  > 位置编码
+  > 位置编码  
+- **对比通用大模型**：通用大模型容易输出生硬直译（如“多头注意”、“向前提供网络”）。Index-Translate 预训练深度覆盖学术语料，准确给出计算机专业译名。
 
 ### 案例 4：商品标签与说明书
-
-- **输入图像**：日文零食包装袋背面配料表。
+- **输入图像**：日文零食包装袋背面配料表（【原材料名】小麦粉（国内製造）、植物油脂、食塩、粉末しょうゆ、香辛料／調味料（アミノ酸等）、香料。）。
 - **指令**：`翻译商品配料表为中文，保留清晰排版。`
-- **模型输出**：
-  > 【原材料名称】小麦粉（日本制造）、植物油、食盐、酱油粉、香辛料／调味料（氨基酸等）、香精。
+- **全系列输出**：
+  > 【配料表】小麦粉（日本制造）、植物油、食用盐、酱油粉、香辛料／调味料（氨基酸等）、食用香精。  
+- **对比传统 OCR 级联**：准确本地化「国内製造」为“日本制造”，严谨保留括号与斜杠分隔符，食品添加剂规范对齐。
 
 ---
 
@@ -213,7 +248,7 @@ User-Agent: Index-Translate-Client/1.0
 ```
 
 ### 2. 支持哪些图片格式？
-支持常见的绝大多数栅格图像格式：`PNG`、`JPEG/JPG`、`WEBP`、`BMP`、`GIF`。
+支持常见的绝大多数图像格式：`PNG`、`JPEG/JPG`、`WEBP`、`BMP`、`GIF`。
 
 ### 3. 图片分辨率建议多大？
 - 建议图像最长边在 512px ~ 2048px 之间。
