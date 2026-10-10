@@ -13,7 +13,16 @@ import re
 from collections import Counter, defaultdict
 from typing import Any
 
+from .constraints import HARD_CONSTRAINT_IDS, SOFT_CONSTRAINT_IDS
+
 SCORES = (0.0, 0.5, 1.0)
+
+
+def _numeric_score(value: Any) -> float | None:
+    """bools are ints: a True verdict must not be read as a 1.0 score."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    return float(value)
 
 
 def parse_quality_score(response: str) -> float | None:
@@ -53,8 +62,9 @@ def parse_soft_constraint_scores(
     for cid in constraint_ids:
         entry = data.get(cid)
         if isinstance(entry, dict):
+            raw_score = entry.get("score")
             try:
-                score = float(entry.get("score"))
+                score = None if isinstance(raw_score, bool) else float(raw_score)
             except (TypeError, ValueError):
                 score = None
             if score in (0, 0.5, 1):
@@ -72,7 +82,8 @@ def compute_if_score(
         if not result.get("is_valid", True):
             hard_pass = 0.0
             break
-    soft_values = [r["score"] for r in soft_results.values() if r.get("score") is not None]
+    soft_values = [_numeric_score(r.get("score")) for r in soft_results.values()]
+    soft_values = [value for value in soft_values if value is not None]
     soft_mean = sum(soft_values) / len(soft_values) if soft_values else 1.0
     return hard_pass * soft_mean
 
@@ -85,7 +96,8 @@ def aggregate_group(rows: list[dict[str, Any]]) -> dict[str, Any]:
     total = len(rows)
     covered = sum(row["prediction_status"] == "present" for row in rows)
     if_scores = [float(row["if_score"]) for row in rows]
-    quality = [row["quality_score"] for row in rows if row["quality_score"] is not None]
+    quality = [_numeric_score(row["quality_score"]) for row in rows]
+    quality = [value for value in quality if value is not None]
     return {
         "total": total,
         "prediction_coverage": covered,
@@ -100,18 +112,32 @@ def aggregate_group(rows: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def aggregate_constraints(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    """Per-constraint pass rate (hard) or mean score (soft)."""
+    """Per-constraint pass rate (hard) or mean score (soft).
+
+    The denominator is every instance that *declares* the constraint, taken from
+    ``constraint_ids`` rather than from the results actually produced: an
+    instance with a missing prediction has no results, and dropping it made a
+    constraint look better precisely when coverage was worse. Such an instance
+    scores 0 for every hard constraint it declares. ``scored`` reports how many
+    instances really produced a verdict.
+    """
     hard: dict[str, Counter] = defaultdict(Counter)
-    soft: dict[str, list[float]] = defaultdict(list)
+    soft: dict[str, list[float | None]] = defaultdict(list)
 
     for row in rows:
-        for cid, result in row["hard_constraint_results"].items():
+        hard_results = row["hard_constraint_results"]
+        soft_results = row["soft_constraint_results"]
+        for cid in row.get("constraint_ids", []):
+            if cid in SOFT_CONSTRAINT_IDS and cid not in hard_results:
+                soft[cid].append(_numeric_score(soft_results.get(cid, {}).get("score")))
+                continue
             hard[cid]["total"] += 1
+            result = hard_results.get(cid)
+            if result is None:
+                continue
+            hard[cid]["scored"] += 1
             if result.get("is_valid", True):
                 hard[cid]["pass"] += 1
-        for cid, result in row["soft_constraint_results"].items():
-            if result.get("score") is not None:
-                soft[cid].append(float(result["score"]))
 
     out: dict[str, Any] = {}
     for cid, counts in sorted(hard.items()):
@@ -120,15 +146,19 @@ def aggregate_constraints(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "type": "hard",
             "total": total,
             "pass": counts["pass"],
+            "fail": total - counts["pass"],
+            "scored": counts["scored"],
             "pass_rate": counts["pass"] / total if total else None,
         }
     for cid, scores in sorted(soft.items()):
+        scored = [score for score in scores if score is not None]
         out[cid] = {
             "type": "soft",
             "total": len(scores),
-            "mean_score": sum(scores) / len(scores) if scores else None,
+            "scored": len(scored),
+            "mean_score": sum(scored) / len(scored) if scored else None,
             "score_distribution": {
-                _score_key(s): sum(1 for v in scores if v == s) for s in SCORES
+                _score_key(s): sum(1 for v in scored if v == s) for s in SCORES
             },
         }
     return out

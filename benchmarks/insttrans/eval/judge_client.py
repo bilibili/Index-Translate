@@ -16,6 +16,7 @@ import random
 import threading
 import time
 from pathlib import Path
+from typing import Callable
 
 # Chat models: deterministic decoding.
 JUDGE_TEMPERATURE = 0.0
@@ -54,6 +55,7 @@ class JudgeClient:
 
         self.model = model
         self.prompt_version = prompt_version
+        self.base_url = base_url
         self.timeout = timeout
         self.max_attempts = max_attempts
         self._use_responses = uses_responses_endpoint(model)
@@ -62,6 +64,7 @@ class JudgeClient:
         self._client = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout)
         self._lock = threading.Lock()
         self._cache: dict[str, str] = {}
+        self._cache_load_errors = 0
         self._load_cache()
 
     def _key(self, prompt: str) -> str:
@@ -83,6 +86,10 @@ class JudgeClient:
         payload = json.dumps(
             {
                 "model": self.model,
+                # The same model name is served by several gateways with
+                # different prompts and decoding defaults, so the endpoint
+                # belongs in the key: two base URLs are not the same Judge.
+                "base_url": self.base_url,
                 "prompt_version": self.prompt_version,
                 "prompt": prompt,
                 **params,
@@ -104,9 +111,11 @@ class JudgeClient:
                     record = json.loads(line)
                     self._cache[record["key"]] = record["response"]
                 except (json.JSONDecodeError, KeyError, TypeError):
-                    # An interrupted final append must not destroy earlier cache entries.
-                    if line_number > 1:
-                        continue
+                    # An interrupted final append must not destroy earlier cache
+                    # entries, so a malformed line is skipped -- line 1 included,
+                    # but it is counted rather than dropped silently.
+                    self._cache_load_errors += 1
+                    continue
 
     def _cache_put(self, key: str, response: str) -> None:
         with self._lock:
@@ -146,8 +155,15 @@ class JudgeClient:
                     parts.append(getattr(item, "text", "") or "")
         return "".join(parts)
 
-    def complete(self, prompt: str) -> tuple[str, bool]:
-        """Return (response_text, served_from_cache)."""
+    def complete(
+        self, prompt: str, validator: Callable[[str], bool] | None = None
+    ) -> tuple[str, bool]:
+        """Return (response_text, served_from_cache).
+
+        ``validator`` gates the cache: a response it rejects -- an empty verdict,
+        or one the caller cannot parse -- is retried and never written to the
+        durable cache, so a single bad provider reply cannot answer later runs.
+        """
         key = self._key(prompt)
         with self._lock:
             cached = self._cache.get(key)
@@ -161,6 +177,8 @@ class JudgeClient:
                     self._complete_via_responses(prompt) if self._use_responses
                     else self._complete_via_chat(prompt)
                 )
+                if validator is not None and not validator(content):
+                    raise JudgeRequestError("judge response failed validation")
                 self._cache_put(key, content)
                 return content, False
             except BaseException as exc:
@@ -183,3 +201,14 @@ class JudgeClient:
     @property
     def cache_entries(self) -> int:
         return len(self._cache)
+
+    def clear_cache(self) -> None:
+        """Drop the durable cache and delete its file.
+
+        The escape hatch for a cache already poisoned by a bad provider reply:
+        without it the only fix would be knowing the file path by heart.
+        """
+        with self._lock:
+            self._cache.clear()
+            if self.cache_path.is_file():
+                self.cache_path.unlink()

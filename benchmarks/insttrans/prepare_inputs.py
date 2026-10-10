@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 
 from eval.prompts import build_model_messages
+from evaluate import read_jsonl
 
 
 def main() -> None:
@@ -19,10 +20,13 @@ def main() -> None:
     if args.output.resolve() == args.data_file.resolve():
         parser.error("--output must differ from --data-file")
 
-    # split("\n"), not splitlines(): source text contains raw U+2028, which is
-    # legal inside a JSON string but is a line break to splitlines().
-    rows = [json.loads(line) for line
-            in args.data_file.read_text(encoding="utf-8").split("\n") if line.strip()]
+    # split("\n"), not splitlines(), is handled by read_jsonl: source text contains
+    # raw U+2028, which is legal inside a JSON string but is a line break to
+    # splitlines().
+    rows = read_jsonl(args.data_file)
+    case_ids = [row["case_id"] for row in rows]
+    if len(set(case_ids)) != len(case_ids):
+        parser.error("data file has duplicate case_id values")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", encoding="utf-8") as handle:
         for row in rows:

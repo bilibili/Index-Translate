@@ -81,9 +81,15 @@ def score_row(
     if present and soft_cids and judge is not None:
         soft_descs = collect_soft_constraint_descs(row["constraint_ids"], row["constraints"])
         if soft_descs:
+            soft_ids = list(soft_descs)
             response, _ = judge.complete(
-                build_soft_constraint_prompt(row, prediction, soft_descs))
-            soft_results = parse_soft_constraint_scores(response, list(soft_descs))
+                build_soft_constraint_prompt(row, prediction, soft_descs),
+                validator=lambda text: all(
+                    entry["score"] is not None
+                    for entry in parse_soft_constraint_scores(text, soft_ids).values()
+                ),
+            )
+            soft_results = parse_soft_constraint_scores(response, soft_ids)
             if any(value["score"] is None for value in soft_results.values()):
                 raise ValueError("Judge returned incomplete or invalid soft-constraint scores")
     elif present and soft_cids:
@@ -91,7 +97,10 @@ def score_row(
 
     quality_score = None
     if present and judge is not None:
-        response, _ = judge.complete(build_quality_prompt(row, prediction))
+        response, _ = judge.complete(
+            build_quality_prompt(row, prediction),
+            validator=lambda text: parse_quality_score(text) is not None,
+        )
         quality_score = parse_quality_score(response)
         if quality_score is None:
             raise ValueError("Judge quality response must be exactly 0, 0.5 or 1")
@@ -124,13 +133,19 @@ def main() -> None:
                         help="score only the first N instances (smoke check, not a formal result)")
     parser.add_argument("--skip-judge", action="store_true",
                         help="rule-only mode: hard constraints only, no Judge calls")
+    parser.add_argument("--clear-judge-cache", action="store_true",
+                        help="delete the Judge cache before scoring (a cached "
+                             "verdict cannot be re-judged otherwise)")
     args = parser.parse_args()
 
     rows = read_jsonl(args.data_file)
+    # --limit narrows what is scored, not which predictions are legal: a
+    # predictions file covers the whole test set (and beyond its tail).
+    all_case_ids = {row["case_id"] for row in rows}
     if args.limit:
         rows = rows[: args.limit]
 
-    predictions = load_predictions(args.predictions, {row["case_id"] for row in rows})
+    predictions = load_predictions(args.predictions, all_case_ids)
     missing = [row["case_id"] for row in rows if row["case_id"] not in predictions]
     if missing and not args.limit:
         print(f"warning: {len(missing)} instances have no prediction and will score 0",
@@ -145,6 +160,8 @@ def main() -> None:
             prompt_version=QUALITY_JUDGE_PROMPT_VERSION,
             cache_path=args.output_dir / "judge_cache.jsonl",
         )
+        if args.clear_judge_cache:
+            judge.clear_cache()
 
     def work(row: dict[str, Any]) -> dict[str, Any]:
         return score_row(row, predictions.get(row["case_id"], ""), judge)
