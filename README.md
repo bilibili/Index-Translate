@@ -1,4 +1,4 @@
-<p align="center">English · <a href="README_zh.md">中文</a></p>
+<p align="center">English · <a href="README_zh.md">中文</a> · <a href="README_ja.md">日本語</a></p>
 
 <h1 align="center">Index-Translate</h1>
 <p align="center"><strong>A Multilingual, Multimodal Translation Model Family</strong><br>Multimodal Translation (Vision & Audio), Controlled Dubbing, and Long-Document Translation</p>

@@ -1,4 +1,4 @@
-<p align="center"><a href="README.md">English</a> · 中文</p>
+<p align="center"><a href="README.md">English</a> · 中文 · <a href="README_ja.md">日本語</a></p>
 
 <h1 align="center">Index-Translate</h1>
 <p align="center"><strong>多语言、多模态翻译模型家族</strong><br>多模态翻译（视觉图像与音频语音）、可控配音与长文档翻译</p>
