@@ -11,11 +11,14 @@ Index-NativeLong retains the published `IndexTeam/Index-Nailong-*` model IDs and
 
 ## Serve
 
+### 1. vLLM Serving (Default port :8000)
+
 ```bash
-pip install -U vllm     # needs a build with Qwen3.5 support (tested on 0.29)
+pip install -U vllm     # needs a build with Qwen3.5 support
 
 ./serve_vllm.sh translate-9b    # IndexTeam/Index-Translate-9B on :8000
 ./serve_vllm.sh translate-2b
+./serve_vllm.sh translate-35b --tensor-parallel-size 2  # 35B-A3B MoE recommended with TP=2
 ./serve_vllm.sh nailong-9b      # long-doc, 229376 max positions per shipped config
 ./serve_vllm.sh nailong-2b      # long-doc, 262144
 ./serve_vllm.sh homura-9b       # syllable-controlled
@@ -25,7 +28,72 @@ pip install -U vllm     # needs a build with Qwen3.5 support (tested on 0.29)
 Extra arguments are passed through to `vllm serve`, e.g.
 `./serve_vllm.sh nailong-9b --tensor-parallel-size 4 --data-parallel-size 2`.
 
-GPU memory (bf16): 2B ≈ 8 GB, 9B ≈ 24 GB, plus KV cache for long contexts.
+### 2. SGLang Serving (Default port :30000, recommended with MTP acceleration)
+
+```bash
+pip install sglang
+
+# Standard autoregressive serving
+./serve_sglang.sh translate-9b
+./serve_sglang.sh translate-35b --tp 2
+
+# Native MTP speculative decoding acceleration (~20% - 28% speedup)
+./serve_sglang.sh translate-9b --mtp
+./serve_sglang.sh homura-9b --mtp
+```
+
+GPU memory (bf16): 2B ≈ 8 GB, 9B ≈ 24 GB, 35B MoE ≈ 70 GB (recommended TP=2), plus KV cache for long contexts.
+
+---
+
+## MTP Speculative Decoding & Acceleration
+
+### What is MTP?
+Index-Translate models feature **native Multi-Token Prediction (MTP) heads** built directly into the checkpoint weights (`mtp_num_hidden_layers: 1`).
+Unlike traditional speculative decoding methods that require an external small draft model (such as a separate 0.5B draft checkpoint), Index-Translate's MTP heads reuse the main model's deep hidden representations. **A single model checkpoint performs draft generation and parallel verification self-sufficiently**, eliminating multi-model memory fragmentation.
+
+### Empirical Benchmarks (NVIDIA A100-SXM4-80GB)
+
+Measured across diverse real-world translation workloads (technical documentation, news, literature, Chinese-English-Japanese):
+
+| Model | Decoding Mode | Decode Throughput | Speedup | Draft Acceptance Rate | Output Quality | Recommended Scenario |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Index-Translate-9B** | Baseline (Autoregressive) | 79.7 tok/s | 1.00x | - | 100% | Batch offline processing |
+| **Index-Translate-9B** | **MTP Speculative Decoding** | **97.4 ~ 107.7 tok/s** | **1.22x ~ 1.28x (+22% ~ +28%)** | **82% ~ 88%** | Semantically identical | **Interactive real-time translation & streaming APIs (Highly Recommended)** |
+| Index-Translate-2B | Baseline | 221.4 tok/s | 1.00x | - | 100% | Standard autoregressive (lightweight model, kernel launch bound) |
+| Index-Translate-35B-A3B (MoE) | Baseline (TP=2) | 135.1 tok/s | 1.00x | - | 100% | Standard autoregressive (3B active parameters, TP communication bound at bs=1) |
+
+> 💡 **Key Takeaways**:
+> 1. **Index-Translate-9B** delivers the most compelling speedup: decoding throughput jumps from 80 tok/s to **over 100 tok/s** with an exceptionally high draft acceptance rate (~**85%**), providing significantly lower end-to-end latency for interactive translation.
+> 2. For **2B** and **35B-A3B**, active parameter counts per token are small (2B~3B), already delivering 130~220+ tok/s autoregressively on modern GPUs; standard decoding is recommended.
+
+### Launching MTP Services
+
+#### SGLang (Recommended)
+```bash
+# Option A: using the official script wrapper
+./inference/llm/serve_sglang.sh translate-9b --mtp
+
+# Option B: native sglang command
+sglang serve \
+  --model-path IndexTeam/Index-Translate-9B \
+  --trust-remote-code \
+  --mamba-scheduler-strategy extra_buffer \
+  --speculative-algorithm NEXTN \
+  --speculative-draft-model-path IndexTeam/Index-Translate-9B \
+  --speculative-num-steps 1 \
+  --speculative-eagle-topk 1 \
+  --speculative-num-draft-tokens 2
+```
+
+#### vLLM
+```bash
+# vLLM native MTP configuration
+vllm serve IndexTeam/Index-Translate-9B \
+  --speculative-config '{"method": "mtp", "num_speculative_tokens": 1}'
+```
+
+---
 
 ## Use
 
@@ -92,29 +160,34 @@ python translate.py "The quick brown fox..." --source en --target zh \
 python translate.py "王平仲采用了更加昂贵的碳纤维材料。碳纤维的好处就是它抗裂缝。" --target en \
     -g "碳纤维:carbon fiber, 抗裂缝:crack resistance"
 
-# 3. instTrans hard constraint: Structured data & format preservation (-H / --hard)
+# 3. instTrans hard constraint: Untranslatable text / span lock (identity mapping e.g. "term:term")
+python translate.py '<span translate="no">我喜欢</span>花蓮的山海澎湖的潮汐' --target en \
+    -g "我喜欢:我喜欢" \
+    -H "保留源文中的 HTML 格式标记不变"
+
+# 4. instTrans hard constraint: Structured data & format preservation (-H / --hard)
 python translate.py '{"user_id": 1024, "message": "您的订单已支付完成。"}' --target en \
     -H "保留源文中的 JSON 格式标记不变"
 
-# 4. instTrans soft constraint: Style and register (-S / --soft) + genre (-d / --genre)
+# 5. instTrans soft constraint: Style and register (-S / --soft) + genre (-d / --genre)
 python translate.py "今天下午的会议临时取消了，改天我们再碰一下商量。" --target en \
     -d "商务邮件" -S "调整为严谨、正式、礼貌的商务公文风格"
 
-# 5. instTrans soft constraint: Domain context and word-sense disambiguation (-S / --soft)
+# 6. instTrans soft constraint: Domain context and word-sense disambiguation (-S / --soft)
 python translate.py "The plant is operating at full capacity after the spring upgrade." --target zh \
     -d "工业制造" -S "语境为工业制造与重工厂房领域，准确消歧专有名词（如 plant 译为工厂而非植物）"
 
-# 6. Combined multi-constraint invocation (repeatable -H and -S flags)
+# 7. Combined multi-constraint invocation (repeatable -H and -S flags)
 python translate.py '{"1": "回复 @零岭七 :乱说，外购不算消费啦？[藏狐] #每日一喵#"}' --target en \
     -d "评论" \
     -H "保留源文中的 JSON 格式标记不变" \
     -H "保留以下社交元素不变: @零岭七、[藏狐]、#每日一喵#"
 
-# 7. Syllable-controlled translation with optional terminology (Index-Homura)
+# 8. Syllable-controlled translation with optional terminology (Index-Homura)
 python syllable_translate.py "我们今天去看电影吧" --syllables 7 --target en \
     --glossary "电影:cinema"
 
-# 8. Long-document translation (Index-NativeLong), fixed direction templates
+# 9. Long-document translation (Index-NativeLong), fixed direction templates
 python doc_translate.py novel.txt --direction zh-en -o novel.en.txt
 python doc_translate.py paper.txt --direction en-zh --model IndexTeam/Index-Nailong-2B
 ```
@@ -133,9 +206,9 @@ Evaluated extensively on the official **instTrans Benchmark** (3,000 real-world 
 
 ### 1. Hard Constraints ($g_{\mathrm{hard}}$ Binary Gate)
 Hard checks must pass with 100% fidelity; any single violation zeroes out the instance score:
-- **Terminology Compliance (`term_compliance`)**: Adhere strictly to user-specified term mappings. Pass mappings directly via `-g / --glossary "term:translation"` or provide a JSON file path, formatted into `【硬性要求】专名/术语对照: A→B、C→D`.
+- **Terminology Compliance (`term_compliance`)**: Adhere strictly to user-specified term mappings. Pass mappings directly via `-g / --glossary "term:translation"` or provide a JSON file path, formatted into `【硬性要求】专名/术语对照: A→B、C→D`. **Identity mapping (`"term:term"`) is also fully supported** to suppress unwanted translation of high-frequency words or untranslatable blocks.
 - **Structure & Format Preservation (`format_preserve`)**: In structured documents (JSON, CSV, Markdown tables, HTML), preserve keys, delimiters, tags, numbers, and boolean values intact while translating user-facing text.
-- **Placeholders & Code Protection (`format_preserve`)**: In software localization, preserve `{variable}`, `%s`, `[123456]`, URLs, and markup unchanged.
+- **Placeholders & Code Protection (`format_preserve`)**: In software localization, preserve `{variable}`, `%s`, `{v0}`, `[123456]`, URLs, and markup unchanged. When handling HTML tags like `<span translate="no">`, identity terminology mapping or pre-processing with `{v0}` placeholders is strongly recommended.
 - **Social Elements Preservation (`social_preserve`)**: In social media posts, danmaku, and comments, preserve `@username`, `#hashtag#`, and `[emoji_code]` intact.
 - **Layout & Typographic Breaks (`layout_break`)**: Preserve exact paragraphing, line breaks, indentation, and table alignments.
 - **Syllable Order Correlation (`syllable_order`)**: In multi-sentence dubbing/subtitling, shorter on-screen duration lines must produce strictly shorter translated syllable counts.

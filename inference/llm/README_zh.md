@@ -9,11 +9,14 @@ Index-NativeLong 沿用已发布的 `IndexTeam/Index-Nailong-*` 模型 ID 与 `n
 
 ## 起服务
 
+### 1. vLLM 部署（默认端口 :8000）
+
 ```bash
-pip install -U vllm     # 需要带 Qwen3.5 支持的版本（实测 0.29）
+pip install -U vllm     # 需要带 Qwen3.5 支持的版本
 
 ./serve_vllm.sh translate-9b    # IndexTeam/Index-Translate-9B，端口 :8000
 ./serve_vllm.sh translate-2b
+./serve_vllm.sh translate-35b --tensor-parallel-size 2  # 35B-A3B MoE 推荐双卡 TP=2
 ./serve_vllm.sh nailong-9b      # 长文档，随包 config 上限 229376
 ./serve_vllm.sh nailong-2b      # 长文档，262144
 ./serve_vllm.sh homura-9b       # 音节控制
@@ -23,7 +26,72 @@ pip install -U vllm     # 需要带 Qwen3.5 支持的版本（实测 0.29）
 多余参数透传给 `vllm serve`，例如
 `./serve_vllm.sh nailong-9b --tensor-parallel-size 4 --data-parallel-size 2`。
 
-显存参考（bf16）：2B ≈ 8 GB，9B ≈ 24 GB，长上下文另需 KV cache。
+### 2. SGLang 部署（默认端口 :30000，推荐搭配 MTP 投机加速）
+
+```bash
+pip install sglang
+
+# 基础自回归部署
+./serve_sglang.sh translate-9b
+./serve_sglang.sh translate-35b --tp 2
+
+# 开启 MTP 原生投机解码加速（~20% - 28% 提速）
+./serve_sglang.sh translate-9b --mtp
+./serve_sglang.sh homura-9b --mtp
+```
+
+显存参考（bf16）：2B ≈ 8 GB，9B ≈ 24 GB，35B MoE ≈ 70 GB（推荐双卡 TP=2），长上下文另需 KV cache。
+
+---
+
+## MTP 投机解码与推理加速（Speculative Decoding）
+
+### 什么是 MTP？
+Index-Translate 系列模型在权重中**内置了多 Token 预测头（Multi-Token Prediction, MTP）**（模型配置 `mtp_num_hidden_layers: 1`）。
+与传统需要额外训练外置小草稿模型（如 0.5B draft model）的投机采样不同，Index-Translate 的 MTP 预测头直接复用主模型的深层表征，**在单个模型权重文件内部即可自给自足完成「草稿生成 + 主网并行验证」**。
+
+### 实测加速表现（NVIDIA A100-SXM4-80GB）
+
+在真实翻译业务评测集（覆盖技术文档、新闻、文学散文、中英日互译）上进行的对照压测表现：
+
+| 模型 | 解码模式 | 解码吞吐 (Tokens/s) | 端到端加速比 | 投机 Token 接受率 | 输出等价性 | 推荐部署场景 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Index-Translate-9B** | 基线 (Autoregressive) | 79.7 tok/s | 1.00x | - | 100% | 批量离线吞吐 |
+| **Index-Translate-9B** | **MTP 投机解码** | **97.4 ~ 107.7 tok/s** | **1.22x ~ 1.28x (+22% ~ +28%)** | **82% ~ 88%** | 语义完全一致 | **低延迟实时翻译 / 流式 API（强烈推荐）** |
+| Index-Translate-2B | 基线 | 221.4 tok/s | 1.00x | - | 100% | 推荐直接基线解码（模型极轻，Kernel Launch 开销占比高） |
+| Index-Translate-35B-A3B (MoE) | 基线 (TP=2) | 135.1 tok/s | 1.00x | - | 100% | 推荐直接基线解码（激活仅 3B 参数，TP 间 All-to-All 通信主导） |
+
+> 💡 **核心结论**：
+> 1. **Index-Translate-9B** 开启 MTP 后加速效果最显著，解码速度直接从 80 tok/s 跃升至 **100+ tok/s**，接受率稳定高达 **85% 左右**，非常适合面向用户交互的低延迟流式翻译服务。
+> 2. **2B** 与 **35B-A3B** 因单 Token 激活参数量小（仅 2B~3B），在 A100/H800 等高带宽计算卡上本身自回归速度已达 130~220+ tok/s，投机解码中的额外前向与跨卡通信开销大于增益，建议保持标准基线自回归解码。
+
+### 命令行快速启动 MTP 服务
+
+#### SGLang（推荐）
+```bash
+# 方式 A：使用官方封装脚本（自动处理 Mamba extra_buffer 与 NEXTN 参数）
+./inference/llm/serve_sglang.sh translate-9b --mtp
+
+# 方式 B：原生 sglang 命令
+sglang serve \
+  --model-path IndexTeam/Index-Translate-9B \
+  --trust-remote-code \
+  --mamba-scheduler-strategy extra_buffer \
+  --speculative-algorithm NEXTN \
+  --speculative-draft-model-path IndexTeam/Index-Translate-9B \
+  --speculative-num-steps 1 \
+  --speculative-eagle-topk 1 \
+  --speculative-num-draft-tokens 2
+```
+
+#### vLLM
+```bash
+# vLLM 原生 MTP 配置
+vllm serve IndexTeam/Index-Translate-9B \
+  --speculative-config '{"method": "mtp", "num_speculative_tokens": 1}'
+```
+
+---
 
 ## 调用
 
@@ -90,29 +158,34 @@ python translate.py "The quick brown fox..." --source en --target zh \
 python translate.py "王平仲采用了更加昂贵的碳纤维材料。碳纤维的好处就是它抗裂缝。" --target en \
     -g "碳纤维:carbon fiber, 抗裂缝:crack resistance"
 
-# 3. instTrans 格式化硬约束：结构化数据与格式保留（-H / --hard）
+# 3. instTrans 格式化硬约束：免译词与专用名词原样锁定（-g 支持等值映射，如 "原词:原词"）
+python translate.py '<span translate="no">我喜欢</span>花蓮的山海澎湖的潮汐' --target en \
+    -g "我喜欢:我喜欢" \
+    -H "保留源文中的 HTML 格式标记不变"
+
+# 4. instTrans 格式化硬约束：结构化数据与格式保留（-H / --hard）
 python translate.py '{"user_id": 1024, "message": "您的订单已支付完成。"}' --target en \
     -H "保留源文中的 JSON 格式标记不变"
 
-# 4. instTrans 格式化软约束：文风与语体（-S / --soft）+ 文体声明（-d / --genre）
+# 5. instTrans 格式化软约束：文风与语体（-S / --soft）+ 文体声明（-d / --genre）
 python translate.py "今天下午的会议临时取消了，改天我们再碰一下商量。" --target en \
     -d "商务邮件" -S "调整为严谨、正式、礼貌的商务公文风格"
 
-# 5. instTrans 格式化软约束：领域消歧（-S / --soft）
+# 6. instTrans 格式化软约束：领域消歧（-S / --soft）
 python translate.py "The plant is operating at full capacity after the spring upgrade." --target zh \
     -d "工业制造" -S "语境为工业制造与重工厂房领域，准确消歧专有名词（如 plant 译为工厂而非植物）"
 
-# 6. 多条约束组合传参（支持多次 -H 和 -S）
+# 7. 多条约束组合传参（支持多次 -H 和 -S）
 python translate.py '{"1": "回复 @零岭七 :乱说，外购不算消费啦？[藏狐] #每日一喵#"}' --target en \
     -d "评论" \
     -H "保留源文中的 JSON 格式标记不变" \
     -H "保留以下社交元素不变: @零岭七、[藏狐]、#每日一喵#"
 
-# 7. 音节受控翻译（Index-Homura，支持结合术语约束）
+# 8. 音节受控翻译（Index-Homura，支持结合术语约束）
 python syllable_translate.py "我们今天去看电影吧" --syllables 7 --target en \
     --glossary "电影:cinema"
 
-# 8. 长文档翻译（Index-NativeLong，固定方向模板）
+# 9. 长文档翻译（Index-NativeLong，固定方向模板）
 python doc_translate.py novel.txt --direction zh-en -o novel.en.txt
 python doc_translate.py paper.txt --direction en-zh --model IndexTeam/Index-Nailong-2B
 ```
@@ -130,9 +203,9 @@ $$R_{\mathrm{inst}} = g_{\mathrm{lang}} \cdot g_{\mathrm{hard}} \cdot \bigl(q_{\
 
 ### 1. 硬约束（Hard Constraints, $g_{\mathrm{hard}}$ 门控）
 硬约束为一票否决制二进制指标（0 或 1），任何一项违背直接判定该用例不达标：
-- **术语强对照（term_compliance）**：严格按照给定的映射表输出目标译名。可直接通过 `-g / --glossary "源词:目标词"` 传入，或传入 JSON 字典文件路径，自动组装为 `【硬性要求】专名/术语对照: A→B、C→D`。
+- **术语强对照（term_compliance）**：严格按照给定的映射表输出目标译名。可直接通过 `-g / --glossary "源词:目标词"` 传入，或传入 JSON 字典文件路径，自动组装为 `【硬性要求】专名/术语对照: A→B、C→D`。**同样支持免译锁定（如 `"原词:原词"`）**，可 100% 抑制高频自然语言词汇被强行翻译。
 - **结构与格式保护（format_preserve）**：在翻译 JSON、CSV、Markdown 表格、HTML 时，严格保护键名、标签、分隔符、数字、布尔值，仅翻译面向用户的文本内容。
-- **变量与占位符保护（format_preserve）**：在系统提示、文案本地化中，严格保留 `{user_name}`、`%s`、`[123456]`、URL 链接等变量不被破坏。
+- **变量与占位符保护（format_preserve）**：在系统提示、文案本地化中，严格保留 `{user_name}`、`%s`、`{v0}`、`[123456]`、URL 链接等变量不被破坏。遇到 HTML `<span translate="no">` 场景，推荐用术语等值映射锁定，或在工程预处理阶段使用 `{v0}` 占位符遮蔽。
 - **社交元素保护（social_preserve）**：在翻译社媒动态、弹幕或评论时，原样保留 `@用户名`、`#话题#`、`[表情代码]` 等社交标记。
 - **版式与排版保留（layout_break）**：保留源文的分段、换行、缩进及列表对齐。
 - **音节长度排序（syllable_order）**：在多句字幕配音中，时长较短的句子译文音节数也必须相应较短。

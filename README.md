@@ -140,17 +140,23 @@ curl https://index-translate.bilibili.com/v1/responses \
 > Browser extensions benefit from our zero-config local bridge proxy (Windows users can simply double-click `run_proxy_windows.bat` in the root folder).
 > 👉 **[【Setup Guide】Immersive Translate Configuration Tutorial (Windows / macOS / Linux, with Screenshots & Troubleshooting)](docs/immersive_translate.md)**
 
-#### Option 2: Self-hosted local vLLM
+#### Option 2: Self-hosted Serving (vLLM / SGLang / MTP Acceleration)
 
-Start with the 2B text model on a CUDA GPU using a vLLM build with Qwen3.5 support. From a terminal:
+Requires a CUDA GPU. You can serve models with either vLLM or SGLang:
 
 ```bash
 git clone https://github.com/bilibili/Index-Translate.git
 cd Index-Translate
-pip install -U vllm
 pip install -r inference/llm/requirements.txt
-vllm serve IndexTeam/Index-Translate-2B --host 127.0.0.1 --port 8000 --max-model-len 4096
+
+# Option A: serve with vLLM (default port 8000)
+./inference/llm/serve_vllm.sh translate-9b
+
+# Option B: serve with SGLang (default port 30000, supports --mtp native speculative decoding, +20%-28% speedup)
+./inference/llm/serve_sglang.sh translate-9b --mtp
 ```
+
+> ⚡ **MTP Speculative Decoding Acceleration**: Index-Translate model checkpoints contain built-in Multi-Token Prediction (MTP) heads. On the 9B model, MTP speculative decoding achieves **~85% draft token acceptance** and **1.22x ~ 1.28x decode acceleration (100+ tok/s)**! See [MTP Speculative Decoding & Acceleration Guide](inference/llm/README.md#mtp-speculative-decoding--acceleration).
 
 From the same repository directory in **another terminal**:
 
@@ -178,7 +184,12 @@ python inference/llm/translate.py \
   "王平仲采用了更加昂贵的碳纤维材料。碳纤维的好处就是它抗裂缝。" \
   --target en -g "碳纤维:carbon fiber, 抗裂缝:crack resistance"
 
-# Hard constraint 2: Format & structure preservation (-H / --hard)
+# Hard constraint 2: Untranslatable text & span lock (-g supports identity mapping e.g. "term:term")
+python inference/llm/translate.py \
+  '<span translate="no">我喜欢</span>花蓮的山海澎湖的潮汐' \
+  --target en -g "我喜欢:我喜欢" -H "保留源文中的 HTML 格式标记不变"
+
+# Hard constraint 3: Format & structure preservation (-H / --hard)
 python inference/llm/translate.py \
   '{"user_id": 1024, "event": "purchase", "message": "您的订单已支付完成。"}' \
   --target en -H "保留源文中的 JSON 格式标记不变"

@@ -142,17 +142,23 @@ curl https://index-translate.bilibili.com/v1/responses \
 > 针对浏览器插件特有的跨域保护 (CORS)、WAF 协议头以及大模型思维链 (CoT) 抑制需求，官方提供零配置本地桥接代理（Windows 用户可直接双击运行根目录 `run_proxy_windows.bat`）。
 > 👉 **[【图文配置教程】沉浸式翻译对接 Index-Translate 完整指南（Windows / macOS / Linux，附实操截图与避坑）](docs/immersive_translate_zh.md)**
 
-#### 方式二：本地私有化部署（vLLM）
+#### 方式二：本地私有化部署（vLLM / SGLang / MTP 投机加速）
 
-先用 2B 文本模型完成一次翻译。需要 CUDA GPU 和支持 Qwen3.5 的 vLLM 版本，在终端中运行：
+需要 CUDA GPU，支持使用 vLLM 或 SGLang 起服务：
 
 ```bash
 git clone https://github.com/bilibili/Index-Translate.git
 cd Index-Translate
-pip install -U vllm
 pip install -r inference/llm/requirements.txt
-vllm serve IndexTeam/Index-Translate-2B --host 127.0.0.1 --port 8000 --max-model-len 4096
+
+# 方式 A：vLLM 起服务（默认端口 8000）
+./inference/llm/serve_vllm.sh translate-9b
+
+# 方式 B：SGLang 起服务（默认端口 30000，推荐开启 --mtp 原生投机解码，提速 ~20%-28%）
+./inference/llm/serve_sglang.sh translate-9b --mtp
 ```
+
+> ⚡ **MTP 投机解码加速**：Index-Translate 模型权重内置多 Token 预测头（MTP）。在 9B 模型上搭配 SGLang 或 vLLM 的 MTP 解码可实现 **85% 左右的 Token 接受率** 与 **1.22x ~ 1.28x（100+ tok/s）** 的解码加速！详见 [MTP 投机解码与推理加速指南](inference/llm/README_zh.md#mtp-投机解码与推理加速speculative-decoding)。
 
 在**另一个终端**进入同一仓库目录，执行：
 
@@ -180,7 +186,12 @@ python inference/llm/translate.py \
   "王平仲采用了更加昂贵的碳纤维材料。碳纤维的好处就是它抗裂缝。" \
   --target en -g "碳纤维:carbon fiber, 抗裂缝:crack resistance"
 
-# 硬约束 2：格式与结构保护（-H / --hard，严格保留 JSON、CSV、Markdown、变量占位符不变）
+# 硬约束 2：免译词与专用名词原样锁定（-g 支持等值映射，如 "原词:原词"）
+python inference/llm/translate.py \
+  '<span translate="no">我喜欢</span>花蓮的山海澎湖的潮汐' \
+  --target en -g "我喜欢:我喜欢" -H "保留源文中的 HTML 格式标记不变"
+
+# 硬约束 3：格式与结构保护（-H / --hard，严格保留 JSON、CSV、Markdown、变量占位符不变）
 python inference/llm/translate.py \
   '{"user_id": 1024, "event": "purchase", "message": "您的订单已支付完成。"}' \
   --target en -H "保留源文中的 JSON 格式标记不变"
