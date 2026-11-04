@@ -14,6 +14,73 @@
   <a href="https://qm.qq.com/q/xSASqaiEGA">🐧&nbsp;QQ</a>
 </p>
 
+> [!IMPORTANT]
+> **New: Index-Translate-Omni 2B / 9B / 35BA3B** brings together text translation, image translation, Chinese/English speech recognition, and bidirectional Chinese–English speech-to-text translation. **[Downloads and benchmarks](#index-translate-omni)**.
+
+## Index-Translate-Omni
+
+| Model | Hugging Face | ModelScope | Release status |
+|---|---|---|---|
+| **Index-Translate-Omni 2B** | [2B](https://huggingface.co/IndexTeam/Index-Translate-omni-2B) | [2B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-2B) | Available |
+| **Index-Translate-Omni 9B** | [9B](https://huggingface.co/IndexTeam/Index-Translate-omni-9B) | [9B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-9B) | Publication in progress |
+| **Index-Translate-Omni 35BA3B** | [35BA3B](https://huggingface.co/IndexTeam/Index-Translate-omni-35B) | [35BA3B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-35B) | Publication in progress |
+
+The checkpoints use the native package layout. Follow the [native inference guide](https://huggingface.co/IndexTeam/Index-Translate-omni-2B/blob/main/NATIVE_INFERENCE.md) and each model card. The 9B and 35BA3B repositories are being completed; their public visibility does not indicate that every file is ready to download.
+
+### Text Translation
+
+| Model | FLORES COMET22 ↑ | WMT24++ COMET22 ↑ | WMT26 Judge ↑ | MEME ↑ |
+|---|---:|---:|---:|---:|
+| Index-Translate 2B | 0.8655 | 0.8489 | 60.26 | 0.6443 |
+| Index-Translate-Omni 2B | 0.8655 | 0.8489 | 60.26 | 0.6443 |
+| Index-Translate 9B | 0.8789 | 0.8601 | 75.35 | 0.7387 |
+| Index-Translate-Omni 9B | 0.8789 | 0.8601 | 75.35 | 0.7387 |
+| Index-Translate 35BA3B (preview) | 0.8794 | 0.8586 | 76.76 | 0.7405 |
+| Index-Translate-Omni 35BA3B | 0.8795 | 0.8593 | 78.01 | 0.7405 |
+
+#### Instruction Following
+
+| Model | instTrans Quality / IFscore ↑ | instTrans_minor Quality / IFscore ↑ / Off-target ↓ | IFMTBench XCOMET-XXL / IFscore ↑ |
+|---|---:|---:|---:|
+| Index-Translate 2B | 0.5391 / 0.7569 | 0.3050 / 0.6586 / 3.97% | 0.7712 / 0.7584 |
+| Index-Translate-Omni 2B | 0.5391 / 0.7569 | 0.3050 / 0.6586 / 3.97% | 0.7712 / 0.7584 |
+| Index-Translate 9B | 0.6771 / 0.8209 | 0.5222 / 0.7725 / 3.47% | 0.7957 / 0.8760 |
+| Index-Translate-Omni 9B | 0.6771 / 0.8209 | 0.5222 / 0.7725 / 3.47% | 0.7957 / 0.8760 |
+| Index-Translate 35BA3B (preview) | 0.6901 / 0.8336 | 0.5151 / 0.7715 / 4.05% | 0.7926 / 0.8991 |
+| Index-Translate-Omni 35BA3B | 0.6867 / 0.8371 | 0.5163 / 0.7843 / 3.62% | 0.7934 / 0.9070 |
+
+Original Index-Translate figures come from the [published benchmarks](https://huggingface.co/IndexTeam/Index-Translate-9B#evaluation). The original 35BA3B reference is the published preview checkpoint.
+
+### Speech
+
+CER is a percentage (lower is better). BLEU and chrF2 are higher-is-better. Translation cells show BLEU / chrF2 / target CER.
+
+| Model | Chinese ASR CER ↓ | English ASR CER ↓ | English → Chinese | Chinese → English |
+|---|---:|---:|---:|---:|
+| Index-Translate-Omni 2B | 13.8113 | 34.2560 | 36.982 / 30.357 / 43.3452 | 30.747 / 51.152 / 48.0670 |
+| Index-Translate-Omni 9B | 17.8917 | 14.4097 | 43.507 / 36.312 / 41.3767 | 34.656 / 55.376 / 46.3720 |
+| Index-Translate-Omni 35BA3B | 18.6803 | 15.0850 | 42.081 / 35.836 / 49.2490 | 36.404 / 57.323 / 45.1546 |
+
+35BA3B uses a separate frontend for Chinese ASR; English ASR and speech translation use the native profile. Evaluation sample counts differ across model sizes.
+
+### Image Translation
+
+COMET22 × 100 (higher is better). Each Omni model is compared with its Qwen3.5 baseline on paired evaluated subsets.
+
+| Model | MMTIT ↑ | FLORES-rendered ↑ | Vistra ↑ |
+|---|---:|---:|---:|
+| Qwen3.5-2B | 52.164 | 50.187 | 55.326 |
+| Index-Translate-Omni 2B | 65.809 | 53.612 | 65.596 |
+| Qwen3.5-9B | 73.814 | 67.804 | 68.963 |
+| Index-Translate-Omni 9B | 77.604 | 68.438 | 71.815 |
+| Qwen3.5-35B-A3B | 75.602 | 70.005 | 71.067 |
+| Index-Translate-Omni 35BA3B | 77.011 | 69.891 | 71.482 |
+
+35BA3B reuses the verified image scores for the same weights. Results cover the evaluated subsets; the original failure and UNKNOWN scoring rules are retained.
+
+
+---
+
 > [!TIP]
 > 🚀 **Free Public API Now Available!** Call **Index-Translate-35B-A3B** directly with zero GPU setup. Fully OpenAI-compatible at `https://index-translate.bilibili.com/v1`. Try it in seconds with `python inference/llm/call_api.py "Hello, world!" --target zh`! 👉 [API Quick Start](#option-1-free-online-api-zero-gpu-setup)
 
@@ -28,10 +95,11 @@ Index-Translate is a family of multilingual, multimodal translation models built
 
 The radar includes **35B-A3B (preview), 9B, and 2B**, with fixed per-axis min–max ranges across all 14 models. Its seven axes are WMT, FLORES, instruction following, low-resource translation, subtitles, MEME, and books/fiction. Instruction following averages instTrans and IFMTBench IFscore. The normalized scale is not an accuracy percentage. The gray dashed line combines the best non-Index score on each axis and does not represent one model. [Raw category scores](docs/assets/seven_category_scores_raw.csv) · [Figure notes](docs/assets/README.md) · [Individual benchmark results](docs/evaluation.md).
 
-[News](#news) · [⚡ Free API](#option-1-free-online-api-zero-gpu-setup) · [✨ Multimodal Translation](#multimodal-translation-showcase-vision--audio) · [Models](#models) · [Quick start](#quick-start) · [Instruction Following](#instruction-following--constrained-translation) · [Examples](#examples) · [Evaluation](#evaluation) · [Benchmarks](#benchmarks) · [Applications](#applications) · [TODO](#todo) · [Papers and citation](#papers-and-citation)
+[**Omni**](#index-translate-omni) · [News](#news) · [⚡ Free API](#option-1-free-online-api-zero-gpu-setup) · [✨ Multimodal Translation](#multimodal-translation-showcase-vision--audio) · [Models](#models) · [Quick start](#quick-start) · [Instruction Following](#instruction-following--constrained-translation) · [Examples](#examples) · [Evaluation](#evaluation) · [Benchmarks](#benchmarks) · [Applications](#applications) · [TODO](#todo) · [Papers and citation](#papers-and-citation)
 
 ## News
 
+- **2026-11-05:** introduced **Index-Translate-Omni 2B / 9B / 35BA3B** for text/image translation, Chinese/English ASR, and bidirectional Chinese–English speech translation. See the pinned [downloads, release status, and benchmarks](#index-translate-omni).
 - **2026-10-10:** launched official **Multimodal Image Translation** support! The full family (**Index-Translate 2B / 9B / 35B-A3B**) natively supports end-to-end image translation. The free public API, Web Demo, Python script ([call_api.py](inference/llm/call_api.py)), and GGUF `mmproj` weights all support image input with zero external OCR dependencies. See the [Tutorial Guide](docs/image_translate.md).
 - **2026-10-04:** released free public API endpoints on [index-translate.bilibili.com/v1](https://index-translate.bilibili.com) for Index-Translate-35B-A3B. Fully OpenAI-compatible. Try it with [call_api.py](inference/llm/call_api.py).
 - **2026-10-04:** released four [Index-Translate benchmarks](#benchmarks), with datasets/metadata on Hugging Face and evaluation scripts and guides on GitHub.
@@ -48,10 +116,11 @@ The radar includes **35B-A3B (preview), 9B, and 2B**, with fixed per-axis min–
 
 ## Models
 
-The links below provide **2B, 9B, and 35B-A3B (preview)** text-model checkpoints. Evaluation results are included in the [comparison tables](docs/evaluation.md).
+The links below include the **Omni native packages** and the original **2B, 9B, and 35B-A3B (preview)** text-model checkpoints. Evaluation results are included in the [comparison tables](docs/evaluation.md).
 
 | Category | Model | Task and released package coverage | Hugging Face | ModelScope | Inference Guide |
 |---|---|---|---|---|---|
+| **Text, Vision & Speech** | **Index-Translate-Omni** | Text/image translation, Chinese/English ASR, and Chinese ↔ English speech translation | [2B](https://huggingface.co/IndexTeam/Index-Translate-omni-2B) · [9B](https://huggingface.co/IndexTeam/Index-Translate-omni-9B) · [35BA3B](https://huggingface.co/IndexTeam/Index-Translate-omni-35B) | [2B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-2B) · [9B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-9B) · [35BA3B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-35B) | [Release status and native guide](#index-translate-omni) |
 | **Text & Multimodal Vision** | **Index-Translate** | Text & multimodal image translation across 150 languages, instruction following | [2B](https://huggingface.co/IndexTeam/Index-Translate-2B) · [9B](https://huggingface.co/IndexTeam/Index-Translate-9B) · [35B-A3B (preview)](https://huggingface.co/IndexTeam/Index-Translate-35B-A3B-preview) ([⚡Free API](#option-1-free-online-api-zero-gpu-setup)) | [2B](https://modelscope.cn/models/IndexTeam/Index-Translate-2B) · [9B](https://modelscope.cn/models/IndexTeam/Index-Translate-9B) · [35B-A3B (preview)](https://modelscope.cn/models/IndexTeam/Index-Translate-35B-A3B-preview) | [Guide](inference/llm/README.md) · [Free API](inference/llm/call_api.py) · [Image Guide](docs/image_translate.md) |
 | **Multimodal Audio & Speech** | **Index-Echo S2TT** | Speech → subtitles; packaged script: zh→en/ja/es | [2B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-2B) · [9B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-9B) | [2B](https://modelscope.cn/models/IndexTeam/Index-Echo-S2TT-2B) · [9B](https://modelscope.cn/models/IndexTeam/Index-Echo-S2TT-9B) | [Guide](inference/echo-s2tt/README.md) |
 | **Multimodal Audio & Speech** | **Index-Echo S2ST** | Speech → speech; zh→en/es/ja, en→zh/es/ja (voice cloning) | [2B](https://huggingface.co/IndexTeam/Index-Echo-S2ST-2B) · [9B](https://huggingface.co/IndexTeam/Index-Echo-S2ST-9B) | [2B](https://modelscope.cn/models/IndexTeam/Index-Echo-S2ST-2B) · [9B](https://modelscope.cn/models/IndexTeam/Index-Echo-S2ST-9B) | [Guide](inference/echo-s2st/README.md) |
@@ -60,7 +129,7 @@ The links below provide **2B, 9B, and 35B-A3B (preview)** text-model checkpoints
 
 **Naming:** Index-NativeLong is published under the model IDs `IndexTeam/Index-Nailong-2B` and `IndexTeam/Index-Nailong-9B`. Use those IDs in commands. Language support for the speech and long-document packages is listed separately from the text models' 150-language coverage.
 
-**Quantized builds:** every model above is also published in **GGUF** (llama.cpp local inference; all bit-widths in one repository per model, vision mmproj included where applicable), **FP8** (compressed-tensors W8A8, ready for vLLM serving), and **FP4** (compressed-tensors NVFP4 W4A4, for Blackwell GPUs). For the Index-Echo speech models, the GGUF repositories contain the **text LLM backbone only**, while the FP8/FP4 repositories ship the **complete pipeline** with a quantized LLM. All repositories are mirrored on [ModelScope](https://modelscope.cn/organization/IndexTeam).
+**Quantized builds:** the original Index-Translate, Index-Homura, Index-NativeLong, and Index-Echo families below are also published in **GGUF** (llama.cpp local inference; all bit-widths in one repository per model, vision mmproj included where applicable), **FP8** (compressed-tensors W8A8, ready for vLLM serving), and **FP4** (compressed-tensors NVFP4 W4A4, for Blackwell GPUs). For the Index-Echo speech models, the GGUF repositories contain the **text LLM backbone only**, while the FP8/FP4 repositories ship the **complete pipeline** with a quantized LLM. All repositories are mirrored on [ModelScope](https://modelscope.cn/organization/IndexTeam).
 
 | Model | GGUF (llama.cpp) | FP8 (vLLM) | FP4 (vLLM, Blackwell) |
 |---|---|---|---|
