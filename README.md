@@ -22,10 +22,10 @@
 | Model | Hugging Face | ModelScope | Release status |
 |---|---|---|---|
 | **Index-Translate-Omni 2B** | [2B](https://huggingface.co/IndexTeam/Index-Translate-omni-2B) | [2B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-2B) | Available |
-| **Index-Translate-Omni 9B** | [9B](https://huggingface.co/IndexTeam/Index-Translate-omni-9B) | [9B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-9B) | Publication in progress |
+| **Index-Translate-Omni 9B** | [9B](https://huggingface.co/IndexTeam/Index-Translate-omni-9B) | [9B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-9B) | Available |
 | **Index-Translate-Omni 35BA3B** | [35BA3B](https://huggingface.co/IndexTeam/Index-Translate-omni-35B) | [35BA3B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-35B) | Publication in progress |
 
-The checkpoints use the native package layout. Follow the [native inference guide](https://huggingface.co/IndexTeam/Index-Translate-omni-2B/blob/main/NATIVE_INFERENCE.md) and each model card. The 9B and 35BA3B repositories are being completed; their public visibility does not indicate that every file is ready to download.
+The checkpoints use the native package layout. Follow the [native inference guide](https://huggingface.co/IndexTeam/Index-Translate-omni-2B/blob/main/NATIVE_INFERENCE.md) and each model card. The 35BA3B Hugging Face repository is being completed; its public visibility does not indicate that every file is ready to download.
 
 ### Text Translation
 
