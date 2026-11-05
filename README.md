@@ -23,9 +23,9 @@
 |---|---|---|---|
 | **Index-Translate-Omni 2B** | [2B](https://huggingface.co/IndexTeam/Index-Translate-omni-2B) | [2B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-2B) | Available |
 | **Index-Translate-Omni 9B** | [9B](https://huggingface.co/IndexTeam/Index-Translate-omni-9B) | [9B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-9B) | Available |
-| **Index-Translate-Omni 35BA3B** | [35BA3B](https://huggingface.co/IndexTeam/Index-Translate-omni-35B) | [35BA3B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-35B) | Publication in progress |
+| **Index-Translate-Omni 35BA3B** | [35BA3B](https://huggingface.co/IndexTeam/Index-Translate-omni-35B) | [35BA3B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-35B) | ModelScope available / HF upload in progress |
 
-The checkpoints use the native package layout. Follow the [native inference guide](https://huggingface.co/IndexTeam/Index-Translate-omni-2B/blob/main/NATIVE_INFERENCE.md) and each model card. The 35BA3B Hugging Face repository is being completed; its public visibility does not indicate that every file is ready to download.
+The checkpoints use the native package layout. Follow the [native inference guide](https://huggingface.co/IndexTeam/Index-Translate-omni-2B/blob/main/NATIVE_INFERENCE.md) and each model card. The 35BA3B Hugging Face upload is still in progress.
 
 ### Text Translation
 
@@ -59,9 +59,9 @@ CER is a percentage (lower is better). BLEU and chrF2 are higher-is-better. Tran
 |---|---:|---:|---:|---:|
 | Index-Translate-Omni 2B | 13.8113 | 34.2560 | 36.982 / 30.357 / 43.3452 | 30.747 / 51.152 / 48.0670 |
 | Index-Translate-Omni 9B | 17.8917 | 14.4097 | 43.507 / 36.312 / 41.3767 | 34.656 / 55.376 / 46.3720 |
-| Index-Translate-Omni 35BA3B | 18.6803 | 15.0850 | 42.081 / 35.836 / 49.2490 | 36.404 / 57.323 / 45.1546 |
+| Index-Translate-Omni 35BA3B | 13.0053 | 15.4950 | 40.074 / 32.862 / 44.8097 | 32.411 / 53.452 / 46.1700 |
 
-35BA3B uses a separate frontend for Chinese ASR; English ASR and speech translation use the native profile. Evaluation sample counts differ across model sizes.
+35BA3B uses one shared audio encoder and connector for all four tasks, with repetition penalty 1.1 for English ASR and the original decoding for the other tasks. Results use the same 30 fixed samples per task. One English → Chinese case reached the 256-token limit with no target translation and remains in the score. Sample counts differ across model sizes.
 
 ### Image Translation
 
