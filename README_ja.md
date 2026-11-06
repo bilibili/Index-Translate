@@ -44,7 +44,8 @@ Index-Translate は、Qwen3.5 をベースに構築された多言語・マル�
 
 - [x] ファミリー全体の公式量子化ビルド（llama.cpp ローカル推論向けの GGUF、vLLM サービング向けの FP8 と NVFP4）を公開する。
 - [x] instTrans、MEME、SandGlass、NAtIveLong のデータ／メタデータと評価コードを公開する。[ベンチマーク](#benchmarks)を参照。
-- [ ] Index-Translate メインモデルで統一的なマルチモーダル翻訳をサポートする：音声・動画翻訳および長文ドキュメントをメインモデルに統合する。
+- [x] テキスト・画像翻訳、中国語と英語の音声認識、中英双方向の音声からテキストへの翻訳に対応する [Index-Translate-Omni](README.md#index-translate-omni) を公開する。
+- [ ] Index-Translate-Omni にネイティブの動画翻訳と長文ドキュメント翻訳を追加する。
 - [ ] Index-Echo-S2ST：対応言語を追加する。
 - [ ] スケールアウト（100B 以上）。
 

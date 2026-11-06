@@ -44,7 +44,8 @@ Index-Translate 是基于 Qwen3.5 构建的多语言、多模态翻译模型家�
 
 - [x] 发布全家族官方量化版本（GGUF 用于 llama.cpp 本地推理，FP8 与 NVFP4 用于 vLLM 部署）。
 - [x] 发布 instTrans、MEME、SandGlass 与 NAtIveLong 的数据／元数据和评测代码，见 [Benchmarks](#benchmarks)。
-- [ ] Index-Translate 主模型支持统一多模态翻译：将音频和视频翻译以及长文本合并进主模型。
+- [x] 发布 [Index-Translate-Omni](README.md#index-translate-omni)，支持文本和图像翻译、中英文语音识别，以及中英双向语音转文本翻译。
+- [ ] 为 Index-Translate-Omni 增加原生视频翻译和长文档翻译。
 - [ ] Index-Echo-S2ST：增加更多语种。
 - [ ] Scaling out (100B+)。
 
