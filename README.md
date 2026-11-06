@@ -23,9 +23,9 @@
 |---|---|---|---|
 | **Index-Translate-Omni 2B** | [2B](https://huggingface.co/IndexTeam/Index-Translate-omni-2B) | [2B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-2B) | Available |
 | **Index-Translate-Omni 9B** | [9B](https://huggingface.co/IndexTeam/Index-Translate-omni-9B) | [9B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-9B) | Available |
-| **Index-Translate-Omni 35BA3B** | [35BA3B](https://huggingface.co/IndexTeam/Index-Translate-omni-35B) | [35BA3B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-35B) | ModelScope available / HF upload in progress |
+| **Index-Translate-Omni 35BA3B** | [35BA3B](https://huggingface.co/IndexTeam/Index-Translate-omni-35B) | [35BA3B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-35B) | Available |
 
-The checkpoints use the native package layout. Follow the [native inference guide](https://huggingface.co/IndexTeam/Index-Translate-omni-2B/blob/main/NATIVE_INFERENCE.md) and each model card. The 35BA3B Hugging Face upload is still in progress.
+The checkpoints use the native package layout. Follow the [native inference guide](https://huggingface.co/IndexTeam/Index-Translate-omni-2B/blob/main/NATIVE_INFERENCE.md) and each model card.
 
 ### Text Translation
 
