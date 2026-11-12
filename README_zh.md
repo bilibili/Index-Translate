@@ -14,6 +14,72 @@
   <a href="https://qm.qq.com/q/xSASqaiEGA">🐧&nbsp;QQ群</a>
 </p>
 
+> [!IMPORTANT]
+> **全新发布：Index-Translate-Omni 2B / 9B / 35BA3B**，集文本翻译、图像翻译、中英文语音识别和中英双向语音转文本翻译于一体。**[下载与评测结果](#index-translate-omni)**。
+
+## Index-Translate-Omni
+
+| 模型 | Hugging Face | ModelScope | 发布状态 |
+|---|---|---|---|
+| **Index-Translate-Omni 2B** | [2B](https://huggingface.co/IndexTeam/Index-Translate-omni-2B) | [2B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-2B) | 已发布 |
+| **Index-Translate-Omni 9B** | [9B](https://huggingface.co/IndexTeam/Index-Translate-omni-9B) | [9B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-9B) | 已发布 |
+| **Index-Translate-Omni 35BA3B** | [35BA3B](https://huggingface.co/IndexTeam/Index-Translate-omni-35B) | [35BA3B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-35B) | 已发布 |
+
+模型权重采用原生包目录结构。请参阅[原生推理指南](https://huggingface.co/IndexTeam/Index-Translate-omni-2B/blob/main/NATIVE_INFERENCE.md)及各模型卡。
+
+### 文本翻译
+
+| 模型 | FLORES COMET22 ↑ | WMT24++ COMET22 ↑ | WMT26 Judge ↑ | MEME ↑ |
+|---|---:|---:|---:|---:|
+| Index-Translate 2B | 0.8655 | 0.8489 | 60.26 | 0.6443 |
+| Index-Translate-Omni 2B | 0.8655 | 0.8489 | 60.26 | 0.6443 |
+| Index-Translate 9B | 0.8789 | 0.8601 | 75.35 | 0.7387 |
+| Index-Translate-Omni 9B | 0.8789 | 0.8601 | 75.35 | 0.7387 |
+| Index-Translate 35BA3B (preview) | 0.8794 | 0.8586 | 76.76 | 0.7405 |
+| Index-Translate-Omni 35BA3B | 0.8795 | 0.8593 | 78.01 | 0.7405 |
+
+#### 指令遵循
+
+| 模型 | instTrans Quality / IFscore ↑ | instTrans_minor Quality / IFscore ↑ / Off-target ↓ | IFMTBench XCOMET-XXL / IFscore ↑ |
+|---|---:|---:|---:|
+| Index-Translate 2B | 0.5391 / 0.7569 | 0.3050 / 0.6586 / 3.97% | 0.7712 / 0.7584 |
+| Index-Translate-Omni 2B | 0.5391 / 0.7569 | 0.3050 / 0.6586 / 3.97% | 0.7712 / 0.7584 |
+| Index-Translate 9B | 0.6771 / 0.8209 | 0.5222 / 0.7725 / 3.47% | 0.7957 / 0.8760 |
+| Index-Translate-Omni 9B | 0.6771 / 0.8209 | 0.5222 / 0.7725 / 3.47% | 0.7957 / 0.8760 |
+| Index-Translate 35BA3B (preview) | 0.6901 / 0.8336 | 0.5151 / 0.7715 / 4.05% | 0.7926 / 0.8991 |
+| Index-Translate-Omni 35BA3B | 0.6867 / 0.8371 | 0.5163 / 0.7843 / 3.62% | 0.7934 / 0.9070 |
+
+原版 Index-Translate 的数据来自[已发布的评测结果](https://huggingface.co/IndexTeam/Index-Translate-9B#evaluation)，原版 35BA3B 的参照对象为已发布的 preview 权重。
+
+### 语音
+
+CER 为百分比，越低越好；BLEU 和 chrF2 越高越好。翻译结果各列依次展示 BLEU / chrF2 / 目标语言 CER。
+
+| 模型 | 中文 ASR CER ↓ | 英文 ASR CER ↓ | 英 → 中 | 中 → 英 |
+|---|---:|---:|---:|---:|
+| Index-Translate-Omni 2B | 13.8113 | 34.2560 | 36.982 / 30.357 / 43.3452 | 30.747 / 51.152 / 48.0670 |
+| Index-Translate-Omni 9B | 17.8917 | 14.4097 | 43.507 / 36.312 / 41.3767 | 34.656 / 55.376 / 46.3720 |
+| Index-Translate-Omni 35BA3B | 13.0053 | 15.4950 | 40.074 / 32.862 / 44.8097 | 32.411 / 53.452 / 46.1700 |
+
+35BA3B 在四项任务中共用同一个音频编码器和连接器；英文 ASR 使用 1.1 的重复惩罚，其他任务沿用原始解码设置。每个任务使用相同的 30 条固定样本。一个英译中样本达到 256 token 上限且未生成目标译文，仍计入成绩。不同模型尺寸的样本数量不同。
+
+### 图像翻译
+
+COMET22 × 100，越高越好。每个 Omni 模型均在配对评测子集上与对应的 Qwen3.5 基线进行比较。
+
+| 模型 | MMTIT ↑ | FLORES-rendered ↑ | Vistra ↑ |
+|---|---:|---:|---:|
+| Qwen3.5-2B | 52.164 | 50.187 | 55.326 |
+| Index-Translate-Omni 2B | 65.809 | 53.612 | 65.596 |
+| Qwen3.5-9B | 73.814 | 67.804 | 68.963 |
+| Index-Translate-Omni 9B | 77.604 | 68.438 | 71.815 |
+| Qwen3.5-35B-A3B | 75.602 | 70.005 | 71.067 |
+| Index-Translate-Omni 35BA3B | 77.011 | 69.891 | 71.482 |
+
+35BA3B 复用了同一权重已经验证的图像评测分数。结果覆盖实际评测的子集，并保留原始失败样本及 UNKNOWN 的计分规则。
+
+---
+
 > [!TIP]
 > 🚀 **官方免费 API 现已开放！** 无需本地显卡环境，直接免费调用 **Index-Translate-35B-A3B** 旗舰翻译模型。完全兼容 OpenAI 接口规范（Base URL: `https://index-translate.bilibili.com/v1`）。支持免依赖脚本即开即用：`python inference/llm/call_api.py "你好，世界" --target en`！👉 [快速上手指南](#方式一免费公网-api-快速调用无需本地-gpu)
 
@@ -30,10 +96,11 @@ Index-Translate 是基于 Qwen3.5 构建的多语言、多模态翻译模型家�
 
 雷达图采用官网七类聚合分数，在完整对比模型集合上固定各维度的 min–max 范围进行归一化，并非准确率。灰色虚线是各维度非 Index 模型的最高值组合，不代表一个实际模型。[原始聚合分数](docs/assets/seven_category_scores_raw.csv) · [图表说明](docs/assets/README.md) · [单项评测结果](docs/evaluation_zh.md)。
 
-[最新动态](#最新动态) · [⚡ 免费 API](#方式一免费公网-api-快速调用无需本地-gpu) · [✨ 多模态翻译](#多模态翻译案例视觉图像与音频语音) · [模型下载](#模型下载) · [快速上手](#快速上手) · [指令遵循](#指令遵循与约束翻译硬约束--软约束) · [精选案例](#精选案例) · [评测结果](#评测结果) · [Benchmarks](#benchmarks) · [应用工具](#应用工具) · [TODO](#todo) · [论文与引用](#论文与引用)
+[**Omni**](#index-translate-omni) · [最新动态](#最新动态) · [⚡ 免费 API](#方式一免费公网-api-快速调用无需本地-gpu) · [✨ 多模态翻译](#多模态翻译案例视觉图像与音频语音) · [模型下载](#模型下载) · [快速上手](#快速上手) · [指令遵循](#指令遵循与约束翻译硬约束--软约束) · [精选案例](#精选案例) · [评测结果](#评测结果) · [Benchmarks](#benchmarks) · [应用工具](#应用工具) · [TODO](#todo) · [论文与引用](#论文与引用)
 
 ## 最新动态
 
+- **2026-11-05：** 发布 **Index-Translate-Omni 2B / 9B / 35BA3B**，支持文本与图像翻译、中英文 ASR 和中英双向语音翻译。下载地址、发布状态与评测结果见置顶 [Omni 专区](#index-translate-omni)。
 - **2026-10-10：** 全面开放多模态图片翻译（Vision）支持！**Index-Translate 全系列（2B / 9B / 35B-A3B）**均原生支持端到端图文翻译。免费公网 API、在线 Demo、Python 调用脚本（[call_api.py](inference/llm/call_api.py)）与 GGUF mmproj 权重同步支持图像输入，零外部 OCR 依赖。详见 [图文教程](docs/image_translate_zh.md)。
 - **2026-10-04：** 正式开放 35B-A3B 免费公网 API 接口（[index-translate.bilibili.com/v1](https://index-translate.bilibili.com)），完全兼容 OpenAI 规范。支持通过 [call_api.py](inference/llm/call_api.py) 免 GPU 快速调用。
 - **2026-10-04：** 发布四个 [Index-Translate benchmarks](#benchmarks)；Hugging Face 提供数据／元数据，GitHub 同步评测脚本和运行说明。
@@ -44,17 +111,18 @@ Index-Translate 是基于 Qwen3.5 构建的多语言、多模态翻译模型家�
 
 - [x] 发布全家族官方量化版本（GGUF 用于 llama.cpp 本地推理，FP8 与 NVFP4 用于 vLLM 部署）。
 - [x] 发布 instTrans、MEME、SandGlass 与 NAtIveLong 的数据／元数据和评测代码，见 [Benchmarks](#benchmarks)。
-- [x] 发布 [Index-Translate-Omni](README.md#index-translate-omni)，支持文本和图像翻译、中英文语音识别，以及中英双向语音转文本翻译。
+- [x] 发布 [Index-Translate-Omni](#index-translate-omni)，支持文本和图像翻译、中英文语音识别，以及中英双向语音转文本翻译。
 - [ ] 为 Index-Translate-Omni 增加原生视频翻译和长文档翻译。
 - [ ] Index-Echo-S2ST：增加更多语种。
 - [ ] Scaling out (100B+)。
 
 ## 模型下载
 
-下表提供 **2B、9B 与 35B-A3B（preview）** 文本模型权重，评测结果见[完整评测表](docs/evaluation_zh.md)。
+下表提供 **Omni 原生模型包**及原版 **2B、9B 与 35B-A3B（preview）** 文本模型权重，评测结果见[完整评测表](docs/evaluation_zh.md)。
 
 | 分类 | 模型 | 任务与发布包覆盖 | Hugging Face | ModelScope | 推理指引 |
 |---|---|---|---|---|---|
+| **文本、视觉与语音** | **Index-Translate-Omni** | 文本与图像翻译、中英文 ASR、中英双向语音翻译 | [2B](https://huggingface.co/IndexTeam/Index-Translate-omni-2B) · [9B](https://huggingface.co/IndexTeam/Index-Translate-omni-9B) · [35BA3B](https://huggingface.co/IndexTeam/Index-Translate-omni-35B) | [2B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-2B) · [9B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-9B) · [35BA3B](https://modelscope.cn/models/IndexTeam/Index-Translate-omni-35B) | [发布状态与原生推理指南](#index-translate-omni) |
 | **文本与多模态视觉** | **Index-Translate** | 150 种语言的文本与多模态图片翻译、指令遵循 | [2B](https://huggingface.co/IndexTeam/Index-Translate-2B) · [9B](https://huggingface.co/IndexTeam/Index-Translate-9B) · [35B-A3B (preview)](https://huggingface.co/IndexTeam/Index-Translate-35B-A3B-preview) ([⚡免费API](#方式一免费公网-api-快速调用无需本地-gpu)) | [2B](https://modelscope.cn/models/IndexTeam/Index-Translate-2B) · [9B](https://modelscope.cn/models/IndexTeam/Index-Translate-9B) · [35B-A3B (preview)](https://modelscope.cn/models/IndexTeam/Index-Translate-35B-A3B-preview) | [使用说明](inference/llm/README_zh.md) · [免费API](inference/llm/call_api.py) · [图片教程](docs/image_translate_zh.md) |
 | **多模态音频语音** | **Index-Echo S2TT** | 语音转字幕；发布脚本支持中→英/日/西 | [2B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-2B) · [9B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-9B) | [2B](https://modelscope.cn/models/IndexTeam/Index-Echo-S2TT-2B) · [9B](https://modelscope.cn/models/IndexTeam/Index-Echo-S2TT-9B) | [使用说明](inference/echo-s2tt/README_zh.md) |
 | **多模态音频语音** | **Index-Echo S2ST** | 语音配音；中→英/西/日，英→中/西/日（音色克隆） | [2B](https://huggingface.co/IndexTeam/Index-Echo-S2ST-2B) · [9B](https://huggingface.co/IndexTeam/Index-Echo-S2ST-9B) | [2B](https://modelscope.cn/models/IndexTeam/Index-Echo-S2ST-2B) · [9B](https://modelscope.cn/models/IndexTeam/Index-Echo-S2ST-9B) | [使用说明](inference/echo-s2st/README_zh.md) |
@@ -63,7 +131,7 @@ Index-Translate 是基于 Qwen3.5 构建的多语言、多模态翻译模型家�
 
 **命名说明：** Index-NativeLong 的实际模型仓库 ID 为 `IndexTeam/Index-Nailong-2B` 和 `IndexTeam/Index-Nailong-9B`，运行命令请使用这两个 ID。语音与长文档发布包的语言覆盖见上表，文本模型的 150 种语言覆盖不等同于每个专门模型的接口覆盖。
 
-**量化版本：** 以上全部模型均同步发布 **GGUF**（适用于 llama.cpp 本地推理；每个模型的全部位宽在同一仓库，含视觉 mmproj）、**FP8**（compressed-tensors W8A8，适用于 vLLM 部署）与 **FP4**（compressed-tensors NVFP4 W4A4，面向 Blackwell GPU）。其中 Index-Echo 语音模型的 GGUF 仓库**仅包含文本 LLM 主干**，FP8/FP4 仓库则包含**完整管线**（LLM 为量化版本）。所有仓库在 [ModelScope](https://modelscope.cn/organization/IndexTeam) 同步开放。
+**量化版本：** 原版 Index-Translate、Index-Homura、Index-NativeLong 与 Index-Echo 家族均同步发布 **GGUF**（适用于 llama.cpp 本地推理；每个模型的全部位宽在同一仓库，含视觉 mmproj）、**FP8**（compressed-tensors W8A8，适用于 vLLM 部署）与 **FP4**（compressed-tensors NVFP4 W4A4，面向 Blackwell GPU）。其中 Index-Echo 语音模型的 GGUF 仓库**仅包含文本 LLM 主干**，FP8/FP4 仓库则包含**完整管线**（LLM 为量化版本）。所有仓库在 [ModelScope](https://modelscope.cn/organization/IndexTeam) 同步开放。
 
 | 模型 | GGUF（llama.cpp） | FP8（vLLM） | FP4（vLLM，Blackwell） |
 |---|---|---|---|
