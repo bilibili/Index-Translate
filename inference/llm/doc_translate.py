@@ -37,9 +37,9 @@ def make_client(base_url: str, api_key: str) -> OpenAI:
     return OpenAI(base_url=base_url, api_key=api_key)
 
 DEFAULT_MODEL = "IndexTeam/Index-Nailong-9B"
-DIRECTIONS = ("zh-en", "en-zh", "zh-ja", "ja-zh")
+DIRECTIONS = ("zh-en", "en-zh", "zh-ja", "ja-zh", "en-ja", "ja-en")
 # Marker inside each template, replaced by the full source text.
-SRC_WORD = {"zh-en": "中文", "en-zh": "英文", "zh-ja": "中文", "ja-zh": "日文"}
+SRC_WORD = {"zh-en": "中文", "en-zh": "英文", "zh-ja": "中文", "ja-zh": "日文", "en-ja": "英文", "ja-en": "日文"}
 PROMPT_DIR = Path(__file__).resolve().parent / "prompts"
 
 
