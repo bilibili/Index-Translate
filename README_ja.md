@@ -417,6 +417,7 @@ NAtIveLong には原作小説や参照訳は含まれていません。公式の
 Index-Translate を使って構築されたオープンソースプロジェクトとアプリケーション：
 
 - **[simul-subtitle](https://github.com/KorenKrita/simul-subtitle)**（作者：[@KorenKrita](https://github.com/KorenKrita)）：Android 向けのリアルタイムなオンデバイス字幕翻訳アプリ。日本語／英語の音声を認識し、Index-Translate により 22 言語に翻訳して、あらゆるアプリの上にライブ字幕をフローティング表示します。
+- **[Tomoru](https://github.com/ACAne0320/Tomoru)**（作者：[@ACAne0320](https://github.com/ACAne0320)）：リアルタイム二言語字幕＆画面内テキスト翻訳デスクトップアプリ。配信・アニメ・ゲーム・会議のシステム音声やアプリ別音声をキャプチャし、Index-Translate（クラウド 2B / 9B / 35B およびオンデバイス 2B / 9B）によるライブ字幕翻訳、用語集の指示追従、マルチモーダルなスクリーンショット翻訳に対応しています。
 
 ## コミュニティ
 
