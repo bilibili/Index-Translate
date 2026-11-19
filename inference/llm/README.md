@@ -19,7 +19,7 @@ pip install -U vllm     # needs a build with Qwen3.5 support
 ./serve_vllm.sh translate-9b    # IndexTeam/Index-Translate-9B on :8000
 ./serve_vllm.sh translate-2b
 ./serve_vllm.sh translate-35b --tensor-parallel-size 2  # 35B-A3B MoE recommended with TP=2
-./serve_vllm.sh nailong-9b      # long-doc, 229376 max positions per shipped config
+./serve_vllm.sh nailong-9b      # long-doc v1.1, 262144 total context tokens
 ./serve_vllm.sh nailong-2b      # long-doc, 262144
 ./serve_vllm.sh homura-9b       # syllable-controlled
 ./serve_vllm.sh homura-2b
@@ -194,6 +194,53 @@ python doc_translate.py paper.txt --direction en-zh --model IndexTeam/Index-Nail
 
 All scripts default to `--base-url http://127.0.0.1:8000/v1` and take
 `--base-url/--model` (or `OPENAI_BASE_URL`/`INDEX_MODEL`) to hit any server.
+
+### NativeLong 9B v1.1
+
+NativeLong 9B v1.1 combines Index-Translate-9B and NativeLong capabilities: improved long-document translation, multilingual text translation, translation instruction following, and support for some instructions spanning a long document. It is text-only, with MTP disabled (MTP0), and supports 262,144 tokens across input and output. Set a smaller `--max-model-len` when serving shorter requests.
+
+#### Free public API
+
+Run this command from the repository root; no local GPU is needed:
+
+```bash
+python inference/llm/call_api.py "Welcome to Moon Harbor." \
+  --model Index-Nailong-9B \
+  --target zh \
+  --instruction "使用自然流畅的中文，只输出译文。" \
+  --glossary "Moon Harbor:月港" \
+  --max-tokens 65536 --stream
+```
+
+The public API model ID is `Index-Nailong-9B`; the downloadable repository is `IndexTeam/Index-Nailong-9B`. The client combines `--target`, `--instruction`, and `--glossary` into the translation prompt. The default output limit is 1,024 tokens; adjust `--max-tokens` for long documents. Add `--stream` for streaming output.
+
+You can also read a UTF-8 text file and save the translation to a file:
+
+```bash
+python inference/llm/call_api.py \
+  --model Index-Nailong-9B \
+  --target zh \
+  --instruction "完整翻译，保留章节与段落顺序，统一人名和术语。" \
+  --max-tokens 65536 --stream \
+  < document.txt > translation.txt
+```
+
+`65536` is the output limit; generation can finish earlier. The prompt, source text, and translation share the server context window. Extract text from PDF or Word documents before translating through this endpoint.
+
+#### Local serving and document templates
+
+The document client `doc_translate.py` defaults to `131072` output tokens (128K), adjustable with `--max-tokens`. Input and output together must fit within `262144` tokens.
+
+`doc_translate.py` retains the four document templates: `zh-en`, `en-zh`, `zh-ja`, and `ja-zh`. For custom translation instructions, use the existing `translate.py` client with the NativeLong model:
+
+```bash
+python translate.py "Welcome to Moon Harbor." \
+  --model IndexTeam/Index-Nailong-9B --target zh \
+  --instruction "Translate Moon Harbor as 月港. Return only the translation." \
+  --temperature 0 --max-tokens 1024
+```
+
+The example sets an output budget for this short input; adjust `--max-tokens` for the text being translated. [Model card and evaluation results](https://huggingface.co/IndexTeam/Index-Nailong-9B).
 
 ---
 

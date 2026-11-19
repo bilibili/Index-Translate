@@ -17,7 +17,7 @@ pip install -U vllm     # 需要带 Qwen3.5 支持的版本
 ./serve_vllm.sh translate-9b    # IndexTeam/Index-Translate-9B，端口 :8000
 ./serve_vllm.sh translate-2b
 ./serve_vllm.sh translate-35b --tensor-parallel-size 2  # 35B-A3B MoE 推荐双卡 TP=2
-./serve_vllm.sh nailong-9b      # 长文档，随包 config 上限 229376
+./serve_vllm.sh nailong-9b      # 长文档 v1.1，总上下文 262144
 ./serve_vllm.sh nailong-2b      # 长文档，262144
 ./serve_vllm.sh homura-9b       # 音节控制
 ./serve_vllm.sh homura-2b
@@ -191,6 +191,53 @@ python doc_translate.py paper.txt --direction en-zh --model IndexTeam/Index-Nail
 ```
 
 脚本默认 `--base-url http://127.0.0.1:8000/v1`，可用 `--base-url/--model`（或环境变量 `OPENAI_BASE_URL`/`INDEX_MODEL`）指向任意服务器。
+
+### NativeLong 9B v1.1
+
+NativeLong 9B v1.1 融合 Index-Translate-9B 与 NativeLong 的能力，提升长文连续翻译能力，保留常规多语言翻译与翻译指令遵循能力，并支持部分长文翻译指令。新版为纯文本、MTP0 模型，支持 262,144 token 总上下文（输入 + 输出）。处理较短请求时，可用 `--max-model-len` 设置较小的服务窗口。
+
+#### 免费公网 API
+
+在仓库根目录运行以下命令，无需本地 GPU：
+
+```bash
+python inference/llm/call_api.py "Welcome to Moon Harbor." \
+  --model Index-Nailong-9B \
+  --target zh \
+  --instruction "使用自然流畅的中文，只输出译文。" \
+  --glossary "Moon Harbor:月港" \
+  --max-tokens 65536 --stream
+```
+
+公网 API 模型名为 `Index-Nailong-9B`，下载仓库为 `IndexTeam/Index-Nailong-9B`。`--target`、`--instruction` 和 `--glossary` 会组合成翻译提示词。默认输出上限为 1024 tokens；翻译长文时，通过 `--max-tokens` 调整输出预算。添加 `--stream` 可逐步接收译文。
+
+也可以读取 UTF-8 文本文件，并将译文保存到文件：
+
+```bash
+python inference/llm/call_api.py \
+  --model Index-Nailong-9B \
+  --target zh \
+  --instruction "完整翻译，保留章节与段落顺序，统一人名和术语。" \
+  --max-tokens 65536 --stream \
+  < document.txt > translation.txt
+```
+
+`65536` 是输出上限，模型可以提前结束。提示词、原文和译文共享服务的总上下文窗口。PDF、Word 等文档需先提取文本，再通过此接口翻译。
+
+#### 本地部署与长文模板
+
+长文客户端 `doc_translate.py` 默认输出上限为 `131072` token（128K），可通过 `--max-tokens` 调整；输入与输出合计不超过 `262144` token。
+
+`doc_translate.py` 继续提供 `zh-en`、`en-zh`、`zh-ja`、`ja-zh` 四套长文模板。自定义翻译要求可通过现有 `translate.py` 客户端传给 NativeLong：
+
+```bash
+python translate.py "Welcome to Moon Harbor." \
+  --model IndexTeam/Index-Nailong-9B --target zh \
+  --instruction "Translate Moon Harbor as 月港. Return only the translation." \
+  --temperature 0 --max-tokens 1024
+```
+
+示例中的输出预算用于这条短文本；实际使用时按待译文本调整 `--max-tokens`。[模型说明与评测结果](https://huggingface.co/IndexTeam/Index-Nailong-9B)。
 
 ---
 

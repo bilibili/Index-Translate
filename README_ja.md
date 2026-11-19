@@ -22,7 +22,7 @@ Index-Translate は、Qwen3.5 をベースに構築された多言語・マル�
 - **Index-Translate（テキスト & 画像マルチモーダル）**: 150 言語のテキスト翻訳に対応し、マルチモーダル画像翻訳（ネイティブ視覚エンコーダ、OCR 依存なし）、構造化コンテンツ、ハード／ソフト制約の指示追従、コミュニティ特有の表現をネイティブにサポートします。
 - **Index-Echo（音声マルチモーダル）**: エンドツーエンドの音声→字幕（S2TT）と、言語をまたいだ声質クローン吹き替え（S2ST）に対応し、翻訳しながら元の話者の声の特徴を保持します。
 - **Index-Homura（尺制御吹き替え）**: 指定した目標音節数に合わせて訳文を動的に調整し、音節レベルでのタイミング合わせを実現します。
-- **Index-NativeLong（長文ドキュメント）**: ドキュメント全体を長文コンテキストとして入力でき、段落をまたいで用語や登場人物名の一貫性を保ちます。
+- **Index-NativeLong（長文ドキュメント）**: ドキュメント全体を長文コンテキストとして入力でき、段落をまたいで用語や登場人物名の一貫性を保ちます。 **9B v1.1** は Index-Translate-9B と NativeLong を統合し、長文の連続翻訳、多言語テキスト翻訳、翻訳指示への追従を一つのモデルで実現しました。長文翻訳の品質も向上し、一部の長文では指定用語の使用などの追加指示にも対応します。
 
 <p align="center"><img src="docs/assets/benchmark-radar.en.svg" width="760" alt="Index-Translate 35B-A3B preview、9B、2B の 7 カテゴリ比較"></p>
 
@@ -33,6 +33,7 @@ Index-Translate は、Qwen3.5 をベースに構築された多言語・マル�
 <a id="news"></a>
 ## ニュース
 
+- **2026-11-13: NativeLong 9B v1.1 アップデート。** Index-Translate-9B の多言語テキスト翻訳と翻訳指示への追従能力を統合し、NativeLong の長文連続翻訳能力を維持・向上させました。標準重みと全12種類の GGUF を [Hugging Face](https://huggingface.co/IndexTeam/Index-Nailong-9B) と [ModelScope](https://modelscope.cn/models/IndexTeam/Index-Nailong-9B) で更新しました。
 - **2026-10-10:** **マルチモーダル画像翻訳**を正式サポートしました！ファミリー全体（**Index-Translate 2B / 9B / 35B-A3B**）がエンドツーエンドの画像翻訳にネイティブ対応しています。無料公開 API、Web デモ、Python スクリプト（[call_api.py](inference/llm/call_api.py)）、GGUF `mmproj` 重みのすべてが、外部 OCR に依存せず画像入力をサポートします。[チュートリアルガイド](docs/image_translate.md)をご覧ください。
 - **2026-10-04:** Index-Translate-35B-A3B の無料公開 API エンドポイントを [index-translate.bilibili.com/v1](https://index-translate.bilibili.com) で公開しました。完全に OpenAI 互換です。[call_api.py](inference/llm/call_api.py) でお試しください。
 - **2026-10-04:** 4 つの [Index-Translate ベンチマーク](#benchmarks)を公開しました。データセット／メタデータは Hugging Face に、評価スクリプトとガイドは GitHub にあります。
@@ -60,9 +61,7 @@ Index-Translate は、Qwen3.5 をベースに構築された多言語・マル�
 | **音声マルチモーダル** | **Index-Echo S2TT** | 音声 → 字幕。同梱スクリプト：zh→en/ja/es | [2B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-2B) · [9B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-9B) | [2B](https://modelscope.cn/models/IndexTeam/Index-Echo-S2TT-2B) · [9B](https://modelscope.cn/models/IndexTeam/Index-Echo-S2TT-9B) | [ガイド](inference/echo-s2tt/README.md) |
 | **音声マルチモーダル** | **Index-Echo S2ST** | 音声 → 音声。zh→en/es/ja、en→zh/es/ja（声質クローン） | [2B](https://huggingface.co/IndexTeam/Index-Echo-S2ST-2B) · [9B](https://huggingface.co/IndexTeam/Index-Echo-S2ST-9B) | [2B](https://modelscope.cn/models/IndexTeam/Index-Echo-S2ST-2B) · [9B](https://modelscope.cn/models/IndexTeam/Index-Echo-S2ST-9B) | [ガイド](inference/echo-s2st/README.md) |
 | **尺制御吹き替え** | **Index-Homura** | 目標音節数を指定した翻訳 | [2B](https://huggingface.co/IndexTeam/Index-Homura-2B) · [9B](https://huggingface.co/IndexTeam/Index-Homura-9B) | [2B](https://modelscope.cn/models/IndexTeam/Index-Homura-2B) · [9B](https://modelscope.cn/models/IndexTeam/Index-Homura-9B) | [ガイド](inference/llm/README.md) |
-| **長文ドキュメント** | **Index-NativeLong** | 長文ドキュメント。固定テンプレート：zh↔en、zh↔ja | [2B](https://huggingface.co/IndexTeam/Index-Nailong-2B) · [9B](https://huggingface.co/IndexTeam/Index-Nailong-9B) | [2B](https://modelscope.cn/models/IndexTeam/Index-Nailong-2B) · [9B](https://modelscope.cn/models/IndexTeam/Index-Nailong-9B) | [ガイド](inference/llm/README.md) |
-
-**名称について:** Index-NativeLong はモデル ID `IndexTeam/Index-Nailong-2B` および `IndexTeam/Index-Nailong-9B` で公開されています。コマンドではこれらの ID を使用してください。音声パッケージと長文ドキュメントパッケージの対応言語は、テキストモデルの 150 言語対応とは別に記載しています。
+| **長文ドキュメント** | **Index-NativeLong** | 長文ドキュメント（zh↔en、zh↔ja）。9B v1.1 は多言語テキスト翻訳と翻訳指示への追従にも対応 | [2B](https://huggingface.co/IndexTeam/Index-Nailong-2B) · [9B v1.1](https://huggingface.co/IndexTeam/Index-Nailong-9B) | [2B](https://modelscope.cn/models/IndexTeam/Index-Nailong-2B) · [9B v1.1](https://modelscope.cn/models/IndexTeam/Index-Nailong-9B) | [ガイド](inference/llm/README.md#nativelong-9b-v11) |
 
 **量子化ビルド:** 上記のすべてのモデルは、**GGUF**（llama.cpp ローカル推論。各モデルにつき 1 リポジトリに全ビット幅を収録し、該当するものは画像用 mmproj を含む）、**FP8**（compressed-tensors W8A8、vLLM サービングにそのまま利用可能）、**FP4**（compressed-tensors NVFP4 W4A4、Blackwell GPU 向け）でも公開しています。Index-Echo 音声モデルについては、GGUF リポジトリには**テキスト LLM バックボーンのみ**が含まれ、FP8/FP4 リポジトリには量子化 LLM を含む**完全なパイプライン**が含まれます。すべてのリポジトリは [ModelScope](https://modelscope.cn/organization/IndexTeam) にもミラーされています。
 
@@ -70,7 +69,7 @@ Index-Translate は、Qwen3.5 をベースに構築された多言語・マル�
 |---|---|---|---|
 | **Index-Translate** | [2B](https://huggingface.co/IndexTeam/Index-Translate-2B-GGUF) · [9B](https://huggingface.co/IndexTeam/Index-Translate-9B-GGUF) · [35B-A3B (preview)](https://huggingface.co/IndexTeam/Index-Translate-35B-A3B-preview-GGUF) | [2B](https://huggingface.co/IndexTeam/Index-Translate-2B-FP8) · [9B](https://huggingface.co/IndexTeam/Index-Translate-9B-FP8) · [35B-A3B (preview)](https://huggingface.co/IndexTeam/Index-Translate-35B-A3B-preview-FP8) | [2B](https://huggingface.co/IndexTeam/Index-Translate-2B-FP4) · [9B](https://huggingface.co/IndexTeam/Index-Translate-9B-FP4) · [35B-A3B (preview)](https://huggingface.co/IndexTeam/Index-Translate-35B-A3B-preview-FP4) |
 | **Index-Homura** | [2B](https://huggingface.co/IndexTeam/Index-Homura-2B-GGUF) · [9B](https://huggingface.co/IndexTeam/Index-Homura-9B-GGUF) | [2B](https://huggingface.co/IndexTeam/Index-Homura-2B-FP8) · [9B](https://huggingface.co/IndexTeam/Index-Homura-9B-FP8) | [2B](https://huggingface.co/IndexTeam/Index-Homura-2B-FP4) · [9B](https://huggingface.co/IndexTeam/Index-Homura-9B-FP4) |
-| **Index-NativeLong** | [2B](https://huggingface.co/IndexTeam/Index-Nailong-2B-GGUF) · [9B](https://huggingface.co/IndexTeam/Index-Nailong-9B-GGUF) | [2B](https://huggingface.co/IndexTeam/Index-Nailong-2B-FP8) · [9B](https://huggingface.co/IndexTeam/Index-Nailong-9B-FP8) | [2B](https://huggingface.co/IndexTeam/Index-Nailong-2B-FP4) · [9B](https://huggingface.co/IndexTeam/Index-Nailong-9B-FP4) |
+| **Index-NativeLong** | [2B](https://huggingface.co/IndexTeam/Index-Nailong-2B-GGUF) · [9B v1.1](https://huggingface.co/IndexTeam/Index-Nailong-9B-GGUF) | [2B](https://huggingface.co/IndexTeam/Index-Nailong-2B-FP8) · [9B（旧版）](https://huggingface.co/IndexTeam/Index-Nailong-9B-FP8) | [2B](https://huggingface.co/IndexTeam/Index-Nailong-2B-FP4) · [9B（旧版）](https://huggingface.co/IndexTeam/Index-Nailong-9B-FP4) |
 | **Index-Echo S2TT** | [2B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-2B-GGUF) · [9B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-9B-GGUF)（LLM バックボーン） | [2B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-2B-FP8) · [9B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-9B-FP8)（完全パイプライン） | [2B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-2B-FP4) · [9B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-9B-FP4)（完全パイプライン） |
 | **Index-Echo S2ST** | [2B](https://huggingface.co/IndexTeam/Index-Echo-S2ST-2B-GGUF) · [9B](https://huggingface.co/IndexTeam/Index-Echo-S2ST-9B-GGUF)（LLM バックボーン） | [2B](https://huggingface.co/IndexTeam/Index-Echo-S2ST-2B-FP8) · [9B](https://huggingface.co/IndexTeam/Index-Echo-S2ST-9B-FP8)（完全パイプライン） | [2B](https://huggingface.co/IndexTeam/Index-Echo-S2ST-2B-FP4) · [9B](https://huggingface.co/IndexTeam/Index-Echo-S2ST-9B-FP4)（完全パイプライン） |
 
@@ -101,6 +100,17 @@ python inference/llm/call_api.py --serve
 # - API URL: http://127.0.0.1:8080/v1
 # - モデル: Index-Translate-35B-A3B
 # - API キー: 任意の文字列（例：index）
+
+# 4. モデルを指定して呼び出す（NativeLong 9B の例）
+# --model / -m で Index-Translate、Index-Homura、Index-NativeLong を選択
+# 例：Index-Translate-9B、Index-Homura-9B、Index-Nailong-9B
+python inference/llm/call_api.py \
+  --model Index-Nailong-9B --target zh \
+  --instruction "全文を翻訳し、章と段落の順序を維持してください。人名と用語の訳を統一してください。" \
+  --max-tokens 65536 --stream \
+  < document.txt > translation.txt
+# document.txt を読み込み、生成された訳文を順次 translation.txt に保存します。
+# その他の言語、用語指定、ローカル推論については inference/llm/README.md を参照してください。
 
 # オプション A：標準の Chat Completions API（OpenAI 互換）
 curl https://index-translate.bilibili.com/v1/chat/completions \
@@ -220,7 +230,7 @@ python inference/llm/syllable_translate.py \
 | 設定 | [Index-Translate](inference/llm/README.md) | [Index-Homura](inference/llm/README.md) | [Index-NativeLong](inference/llm/README.md) | [Echo S2TT](inference/echo-s2tt/README.md) | [Echo S2ST](inference/echo-s2st/README.md) |
 |---|---|---|---|---|---|
 | エントリポイント | `translate.py` | `syllable_translate.py` | `doc_translate.py` | `s2tt.py` → パッケージの `infer.py` | `dub.py` → パッケージの `DubbingBridgeModel` |
-| デフォルトのチェックポイント | 9B | 9B | 9B（`Index-Nailong`） | 2B | ローカルの `./Index-Echo-S2ST-2B` |
+| デフォルトのチェックポイント | 9B | 9B | 9B v1.1 | 2B | ローカルの `./Index-Echo-S2ST-2B` |
 | テキストのデコード | Greedy | サンプリング | Greedy | Greedy（`do_sample=False`） | Greedy（`do_sample=False`） |
 | `temperature` | `0` | `0.3` | `0` | `0` | `0`（テキスト） |
 | `top_p` | 未設定 | 未設定 | `1` | 未設定 | 未設定（テキスト） |
@@ -228,21 +238,22 @@ python inference/llm/syllable_translate.py \
 | `min_p` | 未設定 | 未設定 | `0` | 未設定 | 未設定（テキスト） |
 | `presence_penalty` | 未設定 | 未設定 | `0` | — | — |
 | `repetition_penalty` | 未設定 | 未設定 | `1` | 未設定 | 未設定（テキスト） |
-| `seed` | 未設定 | 未設定 | `42` | 未設定 | `42`（音声） |
+| `seed` | 未設定 | 未設定 | 未設定 | 未設定 | `42`（音声） |
 | Thinking | `enable_thinking=False` | `enable_thinking=False` | `enable_thinking=False` | 空の `<think>` ブロックを事前入力 | 空の `<think>` ブロックを事前入力 |
-| テキスト出力の上限 | `max_tokens=1024` | `max_tokens=max(512, 3 * len(text))` | `max_tokens` は省略。上限はサーバーが決定 | ウィンドウごとに `max_new_tokens=2000` | `max_new_tokens=1024` |
-| テキストの停止条件 | 未設定 | 未設定 | `stop_token_ids=[248044, 248046]`、`ignore_eos=False` | トークナイザーの EOS / `<\|im_end\|>` | トークナイザーの EOS / `<\|im_end\|>` |
+| テキスト出力の上限 | `max_tokens=1024` | `max_tokens=max(512, 3 * len(text))` | `max_tokens=131072` | ウィンドウごとに `max_new_tokens=2000` | `max_new_tokens=1024` |
+| テキストの停止条件 | 未設定 | 未設定 | `stop_token_ids=[248044, 248046]`; `ignore_eos=False` | トークナイザーの EOS / `<\|im_end\|>` | トークナイザーの EOS / `<\|im_end\|>` |
 | 出力ストリーミング | なし | なし | `stream=True` | ウィンドウごとに逐次出力 | 音声は `stream=False` |
-| `serve_vllm.sh` のコンテキスト長（入力 + 出力） | 2B / 9B: `32768`。35B のプリセットなし | `32768` | 2B: `262144`、9B: `229376` | — | — |
+| `serve_vllm.sh` のコンテキスト長（入力 + 出力） | 2B / 9B: `32768`。35B のプリセットなし | `32768` | 2B / 9B v1.1: `262144` | — | — |
 | デフォルトの言語／制約 | ソース `auto`、ターゲット `en` | ターゲット `en`。`--syllables` は必須 | `zh-en` | `zh-en` | `--lang` は必須。ソースは zh/en から推定 |
 | 音声ウィンドウ／履歴 | — | — | — | `--max-win 60` 秒、`--ctx-k 5` 個前までのウィンドウ | 発話は 30 秒以下を推奨、`chunk=False` |
 | 音声サンプラー | — | — | — | — | `sampling=25` で固定。CosyVoice RAS のデフォルト `top_p=0.8`、`top_k=25` |
 | 音声トークンの上限 | — | — | — | — | 最大 `min(1500, 20 * m)`、最小 `2 * m` |
 | 音声の速度／サンプルレート | — | — | — | — | `speed=1.0`、`24000` Hz |
-| 主な上書きオプション | `--model`、`--instruction`、`--glossary`、`--temperature`、`--max-tokens` | `--model`、`--syllables`、`--glossary`、`--temperature`、`--max-tokens` | `--model`、`--direction`、`--max-tokens` | `--size`、`--temperature`、`--max-new-tokens`、`--max-win`、`--ctx-k`、`--glossary` | `--model-dir`、`--lang`。上限／seed は下位レベル API で指定 |
+| 主な上書きオプション | `--model`、`--instruction`、`--glossary`、`--temperature`、`--max-tokens` | `--model`、`--syllables`、`--glossary`、`--temperature`、`--max-tokens` | `--model`、`--direction`、`--source`、`--target`、`--max-tokens`、`--output`、`--base-url` | `--size`、`--temperature`、`--max-new-tokens`、`--max-win`、`--ctx-k`、`--glossary` | `--model-dir`、`--lang`。上限／seed は下位レベル API で指定 |
 
+- **NativeLong:** この列のデコード設定は長文クライアント `doc_translate.py` に対応します。独自の翻訳指示には `translate.py`、公開 API の呼び出しには `call_api.py` を使用します。汎用クライアントでは `--source`、`--target`、`--instruction`、`--glossary`、`--temperature`、`--max-tokens` も指定できます。公開 API クライアントは `--stream` に対応します。[推論ガイド](inference/llm/README.md#nativelong-9b-v11)を参照してください。
 - **テキストクライアント:** デフォルトでは `http://127.0.0.1:8000/v1`、API キー `EMPTY` を使用します。`--base-url` / `--api-key` または `OPENAI_BASE_URL` / `OPENAI_API_KEY` で変更できます。`--model` は `INDEX_MODEL` とデフォルトのチェックポイントより優先されます。35B-A3B は手動でサーブし、`--model IndexTeam/Index-Translate-35B-A3B-preview` で選択してください。
-- **上限:** Homura の `len(text)` は、入力をトリムした後の Python の文字数です。NativeLong で `max_tokens` を省略した場合、出力の上限はサーバーに委ねられますが、コンテキスト容量とサーバーの制限は引き続き適用されます。明示的に上限を設定するには正の値の `--max-tokens` を渡してください。コンテキストにはプロンプト全体と生成出力が含まれます。サービング時の上限は `--max-model-len` で変更できます。
+- **上限:** Homura の `len(text)` は、入力をトリムした後の Python の文字数です。NativeLong 9B v1.1 は入力と出力の合計で最大 262,144 トークンに対応します。使用例の `--max-tokens 65536` は出力を最大 65,536 トークンに設定します。入力の長さを調整する際は、その分の空きを確保してください。コンテキストにはプロンプト全体と生成出力が含まれます。サービング時の上限は `--max-model-len` で変更できます。
 - **Echo S2ST:** `m` はアラインメントされたターゲットテキストのトークン数です。`sampling=25` はパッケージコード内の固定引数で、CLI オプションではありません。公開されている `DubbingBridgeModel.dub` ラッパーは `seed` もトークン上限も公開していません。[モデルカード](https://huggingface.co/IndexTeam/Index-Echo-S2ST-2B#configurable-api-parameters)に記載されている下位レベルの `extract` / `synth` API を使用してください。`chunk=True` は未実装です。
 - **適用範囲:** これらは利用時のデフォルト値です。技術レポートのベンチマークにおけるデコードおよびコンテキスト設定は、[評価](docs/evaluation.md)に別途記載しています。
 
@@ -325,11 +336,17 @@ S2ST のパネルでは、デプロイ済みの 2B システム、パイプラ�
 
 この 3 例は目標を満たしていますが、一般に音節制御は近似的なものであり、発話時間は話し方にも左右されます。[Index-Homura を試す](https://index-translate.bilibili.com/?p=/site/syllable.html&lang=en)
 
-#### 6. ドキュメント全体で登場人物の名前を一貫させる（Index-NativeLong）
+#### 6. NativeLong：ドキュメント全体の翻訳
 
-約 32K トークンのファンタジー作品の中で、「王妃」は登場人物の名前です。以下の抜粋では、ドキュメント全体をネイティブに翻訳した場合と、同じ 9B モデルを使い、近傍の文脈と自動生成の用語集を用いたチャンク分割ワークフローで翻訳した場合を比較しています。
+**適した用途：** NativeLong は、小説、書籍の章、研究報告など、全体を通して読む必要がある長文の翻訳に適しています。登場人物が後半に再登場する場合、用語が前半で定義されている場合、ある文の意味が別の段落に依存する場合も、原文全体の情報を翻訳に活用できます。
 
-| 原文中の位置 | Index-NativeLong-9B（ドキュメント全体） | 同じ 9B（チャンク分割） |
+**9B v1.1** はこの長文翻訳能力と Index-Translate-9B の多言語テキスト翻訳・翻訳指示追従能力を統合し、長文翻訳の品質も向上させました。用語、書式、文体を指定でき、一部の長文でもこうした追加要件に対応します。
+
+**登場人物名の一貫性の例：**
+
+約 32K トークンのファンタジー作品では、前半に「是王妃导师让我来找你过去一趟」（王妃先生に頼まれて呼びに来た）とあり、その後も研究室や学院の場面で「王妃」が登場します。原文の約 84.8% の位置では聖槍騎士を見て驚きます。前後の文脈から、「王妃」は王室の称号ではなく同じ教師の名前だと分かります。以下では全文翻訳と、同じ 9B モデルに近傍の文脈と自動用語集を与えた分割翻訳を比較しています。
+
+| 原文中の位置 | Index-NativeLong-9B（ドキュメント全体） | 分割翻訳 |
 |---|---|---|
 | 31.3% | Mentor Wang Fei | Instructor Wangfei |
 | 56.6% | Wang Fei | the Dean |
@@ -337,7 +354,32 @@ S2ST のパネルでは、デプロイ済みの 2B システム、パイプラ�
 
 位置は原文の文字数で測定しています。ドキュメント全体の出力ではこれらの位置で名前が一貫しています。デモでは、外部から与えた用語集によってチャンク分割の結果を修正できる様子も示しています。[Index-NativeLong を試す](https://index-translate.bilibili.com/?p=/site/doc.html&lang=en)
 
+**文脈内の定義に沿って概念を訳し分ける：**
+
+既存の 9B による氷河史の翻訳例では、著者は `ice age` を短い温暖期も含む寒冷な時代全体と定義し、その中の寒冷期と温暖期を `glacials` と `interglacials` と呼んでいます。中国語訳でも、時代全体とその内部の段階を区別する必要があります。こうした概念の意味は原文の文脈に沿って理解する必要があり、用語集の固定訳だけでは区別を十分に表せないことがあります。
+
+| 翻訳方法 | 実際の中国語訳の抜粋 |
+|---|---|
+| Index-NativeLong-9B（ドキュメント全体） | “**冰河时代**”一词应指整个寒冷事件，包括其中的短暂温暖期。……**冰河时代**中冰层的大规模进退，通常分别称为**冰期和间冰期**。 |
+| Qwen3.8-Flash の分割翻訳＋自動用語集 | “**冰期**”一词恰当地指代整个寒冷时期，包括其间短暂的温暖阶段。……在一个**冰期**内，大规模冰川推进和消退通常分别被称为**冰期和间冰期**。 |
+
+NativeLong は「冰河时代」と「冰期／间冰期」を訳し分け、全体と内部の段階をどちらも「冰期」とする混同を避けています。省略記号は抜粋時に中間の文章を省いた箇所です。
+
+**全文翻訳の例：3 文書を 3 回の呼び出しで翻訳**
+
+既存の 9B 比較実験では、氷河史、ゲームファンタジー、労使関係の 3 つの長文を翻訳しました。全文翻訳は各文書を 1 回の呼び出しで末尾まで生成しました。同じモデルによる分割翻訳では、用語集を生成した後、文脈を引き継ぎながら各チャンクを翻訳し、出力を結合しました。
+
+| 3 文書の合計 | Index-NativeLong-9B（ドキュメント全体） | 分割翻訳 |
+|---|---|---|
+| モデル呼び出し回数 | 3 | 160（用語集の自動生成を含む） |
+| 翻訳手順 | 全文入力 → 連続生成 | 用語集生成 → 分割翻訳 → 訳文結合 |
+
+書籍や長い記事でも、NativeLong は原文全体の文脈を直接利用できます。チャンク間で人名、用語、前文の要約を引き継ぐための別工程は不要です。
+
 <a id="evaluation"></a>
+
+[API・ファイル翻訳・推論ガイド](inference/llm/README.md#nativelong-9b-v11) · [v1.1 の長文・汎用翻訳評価](https://huggingface.co/IndexTeam/Index-Nailong-9B#nativelongbench-evaluation)
+
 ## 評価
 
 ![更新されたテキスト翻訳ベンチマーク](docs/assets/text_benchmark_overview.en.svg)
@@ -384,9 +426,11 @@ FLORES_minor_pair は低リソース言語での一般的な翻訳を評価し�
 
 ![Index-NativeLong 64K の評価](docs/assets/nativelong_benchmark_overview.en.svg)
 
+上の NativeLong の図は旧版の結果です。v1.1 の評価は[モデルカード](https://huggingface.co/IndexTeam/Index-Nailong-9B#nativelongbench-evaluation)を参照してください。
+
 中国語側 64K トークンでの GuoFeng と BWB Track A3 の結果です。
 
-特化モデルについては、Index-Homura-9B が SandGlass で **81.92% の出力を目標音節数の ±10% 以内**に収めています。Index-NativeLong-9B は GuoFeng / BWB / Books で **0.7891 / 0.7683 / 0.8848** のスコアを記録しています。完全な表には、翻訳品質とのトレードオフや評価に関する注記も含まれています。
+特化モデルについては、Index-Homura-9B が SandGlass で **81.92% の出力を目標音節数の ±10% 以内**に収めています。Index-NativeLong-9B v1.1 の[長文評価と、同時期に実施した汎用翻訳・翻訳指示追従の比較](https://huggingface.co/IndexTeam/Index-Nailong-9B#nativelongbench-evaluation)はモデルカードに掲載しています。完全な表には、翻訳品質とのトレードオフや評価に関する注記も含まれています。
 
 <a id="benchmarks"></a>
 ## ベンチマーク
