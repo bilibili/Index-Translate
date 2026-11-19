@@ -487,6 +487,7 @@ NAtIveLong 不包含小说原文或参考译文；BWB 需自行获取官方语�
 感谢社区开发者基于 Index-Translate 构建的开源项目与应用：
 
 - **[simul-subtitle](https://github.com/KorenKrita/simul-subtitle)**（by [@KorenKrita](https://github.com/KorenKrita)）：Android 实时同传字幕应用。在手机端实时识别日语/英语，通过 Index-Translate 翻译成 22 种语言，并支持以悬浮窗形式在任意 App 之上实时显示。
+- **[Tomoru](https://github.com/ACAne0320/Tomoru)**（by [@ACAne0320](https://github.com/ACAne0320)）：实时双语字幕与截屏翻译桌面应用。支持捕获系统或指定应用音频，适用于直播、生肉番剧、游戏与会议；基于 Index-Translate（云端 2B / 9B / 35B 与本地 2B / 9B）提供实时字幕翻译、专有名词术语表指令遵循，以及多模态截屏翻译。
 
 ## 交流社区
 

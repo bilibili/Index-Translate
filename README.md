@@ -488,6 +488,7 @@ Open-source projects and applications built with Index-Translate:
 
 - **[simul-subtitle](https://github.com/KorenKrita/simul-subtitle)** (by [@KorenKrita](https://github.com/KorenKrita)): Real-time on-device subtitle translation for Android. Recognizes Japanese/English speech, translates into 22 languages powered by Index-Translate, and renders floating live subtitles over any app.
 - **[IndexTranslate_iPadM5](https://github.com/Baizhi-Angelica/IndexTranslate_iPadM5)** (by [@Baizhi-Angelica](https://github.com/Baizhi-Angelica)): On-device offline speech translation for iPad. Combines Apple SpeechAnalyzer transcription with Index-Translate-2B GGUF inference via llama.cpp and Metal, supporting seven input and output languages and preserving English terms in mixed Chinese-English speech.
+- **[Tomoru](https://github.com/ACAne0320/Tomoru)** (by [@ACAne0320](https://github.com/ACAne0320)): Real-time bilingual subtitles and screen text translation for desktop. Captures system or per-app audio for streams, anime, games, and meetings, with live subtitle translation, glossary instruction following, and multimodal screenshot translation powered by Index-Translate (cloud 2B / 9B / 35B and on-device 2B / 9B).
 
 ## Community
 
