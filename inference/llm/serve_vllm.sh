@@ -18,7 +18,7 @@
 #
 # GPU memory guide (bf16, single card):
 #   2B models: ~8 GB    9B models: ~24 GB   35B MoE: ~70 GB (recommend --tensor-parallel-size 2)
-#   Nailong 9B: the shipped config caps position embeddings at 229376;
+#   Nailong 9B v1.1: the model supports 262144 total context tokens;
 #   reduce --max-model-len for lower KV-cache memory use.
 
 set -euo pipefail
@@ -30,7 +30,7 @@ case "$which" in
   translate-9b)  MODEL=IndexTeam/Index-Translate-9B ;;
   translate-35b) MODEL=IndexTeam/Index-Translate-35B-A3B-preview ;;
   nailong-2b)    MODEL=IndexTeam/Index-Nailong-2B;  MAXLEN=262144 ;;
-  nailong-9b)    MODEL=IndexTeam/Index-Nailong-9B;  MAXLEN=229376 ;;  # shipped config cap
+  nailong-9b)    MODEL=IndexTeam/Index-Nailong-9B;  MAXLEN=262144 ;;  # v1.1 context limit
   homura-2b)     MODEL=IndexTeam/Index-Homura-2B ;;
   homura-9b)     MODEL=IndexTeam/Index-Homura-9B ;;
   *)

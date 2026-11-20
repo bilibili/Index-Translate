@@ -2,20 +2,20 @@
 """Translate long documents with Index-Nailong-2B / Index-Nailong-9B via any
 OpenAI-compatible server (vLLM recommended).
 
-Nailong is a long-context (262K) document-translation model. Unlike a generic
-chat model it is served with FIXED per-direction prompt templates and a FIXED
-greedy sampling profile — both are reproduced here exactly:
+Nailong is a long-context (262K) document-translation model. This document client
+uses fixed per-direction prompt templates and greedy decoding. The 9B v1.1 model also supports custom
+translation instructions through translate.py; this client keeps the document defaults:
 
   * directions: zh-en / en-zh / zh-ja / ja-zh (templates in prompts/)
-  * greedy: temperature=0, top_p=1, top_k=-1, min_p=0, seed=42
+  * greedy: temperature=0, top_p=1, top_k=-1, min_p=0
   * stop_token_ids=[248044, 248046], enable_thinking=False
-  * no max_tokens by default: the server selects the output cap within its limits
+  * max_tokens=131072 by default; input and output share the 262144-token window
 
 Usage:
     python doc_translate.py novel.txt --direction zh-en -o novel.en.txt
     python doc_translate.py chapter.txt --source zh --target ja | less
 
-Defaults assume:  vllm serve IndexTeam/Index-Nailong-9B --max-model-len 229376
+Defaults assume:  vllm serve IndexTeam/Index-Nailong-9B --max-model-len 262144
 """
 
 import argparse
@@ -76,8 +76,8 @@ def main() -> None:
     ap.add_argument("--model", "-m", default=os.environ.get("INDEX_MODEL", DEFAULT_MODEL))
     ap.add_argument("--base-url", default=os.environ.get("OPENAI_BASE_URL", "http://127.0.0.1:8000/v1"))
     ap.add_argument("--api-key", default=os.environ.get("OPENAI_API_KEY", "EMPTY"))
-    ap.add_argument("--max-tokens", type=int, default=0,
-                    help="0 = omit max_tokens; the server selects the output cap within its limits")
+    ap.add_argument("--max-tokens", type=int, default=131072,
+                    help="maximum output tokens (default: 131072); 0 lets the server select the cap")
     args = ap.parse_args()
 
     text = sys.stdin.read() if args.input == "-" else Path(args.input).read_text(encoding="utf-8")
@@ -93,7 +93,6 @@ def main() -> None:
         messages=[{"role": "user", "content": prompt}],
         temperature=0,
         top_p=1,
-        seed=42,
         stream=True,
         extra_body={
             "top_k": -1,

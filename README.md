@@ -89,7 +89,7 @@ Index-Translate is a family of multilingual, multimodal translation models built
 - **Index-Translate (Text & Multimodal Vision)**: Covers 150 languages for text translation, with native support for multimodal image translation (native vision encoder, zero OCR dependency), structured content, hard/soft instruction following, and community expressions.
 - **Index-Echo (Multimodal Audio & Speech)**: End-to-end speech-to-subtitles (S2TT) and cross-lingual voice-cloned dubbing (S2ST), preserving the source speaker's voice characteristics while translating.
 - **Index-Homura (Controlled Dubbing)**: Dynamically adjusts translations to match a specified target syllable budget for syllable-level timing alignment.
-- **Index-NativeLong (Long Document)**: Supports long-context input for complete documents, maintaining term and character name consistency across paragraphs.
+- **Index-NativeLong (Long Document)**: Supports long-context input for complete documents, maintaining term and character name consistency across paragraphs. **9B v1.1** merges Index-Translate-9B with NativeLong, bringing continuous long-document translation, general multilingual translation, and translation instruction following together in one model. It also improves long-document translation quality and can follow additional instructions in some long-document scenarios, such as using specified terminology.
 
 <p align="center"><img src="docs/assets/benchmark-radar.en.svg" width="760" alt="Seven-category comparison of Index-Translate 35B-A3B preview, 9B, and 2B"></p>
 
@@ -99,6 +99,7 @@ The radar includes **35B-A3B (preview), 9B, and 2B**, with fixed per-axis min–
 
 ## News
 
+- **2026-11-13: NativeLong 9B v1.1 update.** Integrates Index-Translate-9B’s general multilingual translation and translation instruction-following capabilities while retaining and improving NativeLong’s continuous long-document translation. Standard weights and all 12 GGUF variants are updated on [Hugging Face](https://huggingface.co/IndexTeam/Index-Nailong-9B) and [ModelScope](https://modelscope.cn/models/IndexTeam/Index-Nailong-9B).
 - **2026-11-05:** introduced **Index-Translate-Omni 2B / 9B / 35BA3B** for text/image translation, Chinese/English ASR, and bidirectional Chinese–English speech translation. See the pinned [downloads, release status, and benchmarks](#index-translate-omni).
 - **2026-10-10:** launched official **Multimodal Image Translation** support! The full family (**Index-Translate 2B / 9B / 35B-A3B**) natively supports end-to-end image translation. The free public API, Web Demo, Python script ([call_api.py](inference/llm/call_api.py)), and GGUF `mmproj` weights all support image input with zero external OCR dependencies. See the [Tutorial Guide](docs/image_translate.md).
 - **2026-10-04:** released free public API endpoints on [index-translate.bilibili.com/v1](https://index-translate.bilibili.com) for Index-Translate-35B-A3B. Fully OpenAI-compatible. Try it with [call_api.py](inference/llm/call_api.py).
@@ -126,9 +127,7 @@ The links below include the **Omni native packages** and the original **2B, 9B, 
 | **Multimodal Audio & Speech** | **Index-Echo S2TT** | Speech → subtitles; packaged script: zh→en/ja/es | [2B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-2B) · [9B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-9B) | [2B](https://modelscope.cn/models/IndexTeam/Index-Echo-S2TT-2B) · [9B](https://modelscope.cn/models/IndexTeam/Index-Echo-S2TT-9B) | [Guide](inference/echo-s2tt/README.md) |
 | **Multimodal Audio & Speech** | **Index-Echo S2ST** | Speech → speech; zh→en/es/ja, en→zh/es/ja (voice cloning) | [2B](https://huggingface.co/IndexTeam/Index-Echo-S2ST-2B) · [9B](https://huggingface.co/IndexTeam/Index-Echo-S2ST-9B) | [2B](https://modelscope.cn/models/IndexTeam/Index-Echo-S2ST-2B) · [9B](https://modelscope.cn/models/IndexTeam/Index-Echo-S2ST-9B) | [Guide](inference/echo-s2st/README.md) |
 | **Controlled Dubbing** | **Index-Homura** | Translation with a target syllable count | [2B](https://huggingface.co/IndexTeam/Index-Homura-2B) · [9B](https://huggingface.co/IndexTeam/Index-Homura-9B) | [2B](https://modelscope.cn/models/IndexTeam/Index-Homura-2B) · [9B](https://modelscope.cn/models/IndexTeam/Index-Homura-9B) | [Guide](inference/llm/README.md) |
-| **Long Document** | **Index-NativeLong** | Long documents; fixed templates: zh↔en, zh↔ja | [2B](https://huggingface.co/IndexTeam/Index-Nailong-2B) · [9B](https://huggingface.co/IndexTeam/Index-Nailong-9B) | [2B](https://modelscope.cn/models/IndexTeam/Index-Nailong-2B) · [9B](https://modelscope.cn/models/IndexTeam/Index-Nailong-9B) | [Guide](inference/llm/README.md) |
-
-**Naming:** Index-NativeLong is published under the model IDs `IndexTeam/Index-Nailong-2B` and `IndexTeam/Index-Nailong-9B`. Use those IDs in commands. Language support for the speech and long-document packages is listed separately from the text models' 150-language coverage.
+| **Long Document** | **Index-NativeLong** | Long documents (zh↔en, zh↔ja); 9B v1.1 also supports multilingual text translation and translation instructions | [2B](https://huggingface.co/IndexTeam/Index-Nailong-2B) · [9B v1.1](https://huggingface.co/IndexTeam/Index-Nailong-9B) | [2B](https://modelscope.cn/models/IndexTeam/Index-Nailong-2B) · [9B v1.1](https://modelscope.cn/models/IndexTeam/Index-Nailong-9B) | [Guide](inference/llm/README.md#nativelong-9b-v11) |
 
 **Quantized builds:** the original Index-Translate, Index-Homura, Index-NativeLong, and Index-Echo families below are also published in **GGUF** (llama.cpp local inference; all bit-widths in one repository per model, vision mmproj included where applicable), **FP8** (compressed-tensors W8A8, ready for vLLM serving), and **FP4** (compressed-tensors NVFP4 W4A4, for Blackwell GPUs). For the Index-Echo speech models, the GGUF repositories contain the **text LLM backbone only**, while the FP8/FP4 repositories ship the **complete pipeline** with a quantized LLM. All repositories are mirrored on [ModelScope](https://modelscope.cn/organization/IndexTeam).
 
@@ -136,7 +135,7 @@ The links below include the **Omni native packages** and the original **2B, 9B, 
 |---|---|---|---|
 | **Index-Translate** | [2B](https://huggingface.co/IndexTeam/Index-Translate-2B-GGUF) · [9B](https://huggingface.co/IndexTeam/Index-Translate-9B-GGUF) · [35B-A3B (preview)](https://huggingface.co/IndexTeam/Index-Translate-35B-A3B-preview-GGUF) | [2B](https://huggingface.co/IndexTeam/Index-Translate-2B-FP8) · [9B](https://huggingface.co/IndexTeam/Index-Translate-9B-FP8) · [35B-A3B (preview)](https://huggingface.co/IndexTeam/Index-Translate-35B-A3B-preview-FP8) | [2B](https://huggingface.co/IndexTeam/Index-Translate-2B-FP4) · [9B](https://huggingface.co/IndexTeam/Index-Translate-9B-FP4) · [35B-A3B (preview)](https://huggingface.co/IndexTeam/Index-Translate-35B-A3B-preview-FP4) |
 | **Index-Homura** | [2B](https://huggingface.co/IndexTeam/Index-Homura-2B-GGUF) · [9B](https://huggingface.co/IndexTeam/Index-Homura-9B-GGUF) | [2B](https://huggingface.co/IndexTeam/Index-Homura-2B-FP8) · [9B](https://huggingface.co/IndexTeam/Index-Homura-9B-FP8) | [2B](https://huggingface.co/IndexTeam/Index-Homura-2B-FP4) · [9B](https://huggingface.co/IndexTeam/Index-Homura-9B-FP4) |
-| **Index-NativeLong** | [2B](https://huggingface.co/IndexTeam/Index-Nailong-2B-GGUF) · [9B](https://huggingface.co/IndexTeam/Index-Nailong-9B-GGUF) | [2B](https://huggingface.co/IndexTeam/Index-Nailong-2B-FP8) · [9B](https://huggingface.co/IndexTeam/Index-Nailong-9B-FP8) | [2B](https://huggingface.co/IndexTeam/Index-Nailong-2B-FP4) · [9B](https://huggingface.co/IndexTeam/Index-Nailong-9B-FP4) |
+| **Index-NativeLong** | [2B](https://huggingface.co/IndexTeam/Index-Nailong-2B-GGUF) · [9B v1.1](https://huggingface.co/IndexTeam/Index-Nailong-9B-GGUF) | [2B](https://huggingface.co/IndexTeam/Index-Nailong-2B-FP8) · [9B (previous version)](https://huggingface.co/IndexTeam/Index-Nailong-9B-FP8) | [2B](https://huggingface.co/IndexTeam/Index-Nailong-2B-FP4) · [9B (previous version)](https://huggingface.co/IndexTeam/Index-Nailong-9B-FP4) |
 | **Index-Echo S2TT** | [2B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-2B-GGUF) · [9B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-9B-GGUF) (LLM backbone) | [2B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-2B-FP8) · [9B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-9B-FP8) (full pipeline) | [2B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-2B-FP4) · [9B](https://huggingface.co/IndexTeam/Index-Echo-S2TT-9B-FP4) (full pipeline) |
 | **Index-Echo S2ST** | [2B](https://huggingface.co/IndexTeam/Index-Echo-S2ST-2B-GGUF) · [9B](https://huggingface.co/IndexTeam/Index-Echo-S2ST-9B-GGUF) (LLM backbone) | [2B](https://huggingface.co/IndexTeam/Index-Echo-S2ST-2B-FP8) · [9B](https://huggingface.co/IndexTeam/Index-Echo-S2ST-9B-FP8) (full pipeline) | [2B](https://huggingface.co/IndexTeam/Index-Echo-S2ST-2B-FP4) · [9B](https://huggingface.co/IndexTeam/Index-Echo-S2ST-9B-FP4) (full pipeline) |
 
@@ -165,6 +164,17 @@ python inference/llm/call_api.py --serve
 # - API URL: http://127.0.0.1:8080/v1
 # - Model: Index-Translate-35B-A3B
 # - API Key: Any string (e.g. index)
+
+# 4. Select a model (NativeLong 9B example)
+# --model / -m selects Index-Translate, Index-Homura, or Index-NativeLong
+# Examples: Index-Translate-9B, Index-Homura-9B, Index-Nailong-9B
+python inference/llm/call_api.py \
+  --model Index-Nailong-9B --target zh \
+  --instruction "Translate the entire text. Preserve the order of chapters and paragraphs, and keep names and terminology consistent." \
+  --max-tokens 65536 --stream \
+  < document.txt > translation.txt
+# Read document.txt and stream the translation into translation.txt.
+# See inference/llm/README.md for other languages, glossary options, and local serving.
 
 # Option A: Standard Chat Completions API (OpenAI-compatible)
 curl https://index-translate.bilibili.com/v1/chat/completions \
@@ -294,7 +304,7 @@ This is the shared reference for the repository clients and the released Echo pa
 | Setting | [Index-Translate](inference/llm/README.md) | [Index-Homura](inference/llm/README.md) | [Index-NativeLong](inference/llm/README.md) | [Echo S2TT](inference/echo-s2tt/README.md) | [Echo S2ST](inference/echo-s2st/README.md) |
 |---|---|---|---|---|---|
 | Entry point | `translate.py` | `syllable_translate.py` | `doc_translate.py` | `s2tt.py` → package `infer.py` | `dub.py` → package `DubbingBridgeModel` |
-| Default checkpoint | 9B | 9B | 9B (`Index-Nailong`) | 2B | Local `./Index-Echo-S2ST-2B` |
+| Default checkpoint | 9B | 9B | 9B v1.1 | 2B | Local `./Index-Echo-S2ST-2B` |
 | Text decoding | Greedy | Sampling | Greedy | Greedy (`do_sample=False`) | Greedy (`do_sample=False`) |
 | `temperature` | `0` | `0.3` | `0` | `0` | `0` (text) |
 | `top_p` | Not set | Not set | `1` | Not set | Not set (text) |
@@ -302,21 +312,22 @@ This is the shared reference for the repository clients and the released Echo pa
 | `min_p` | Not set | Not set | `0` | Not set | Not set (text) |
 | `presence_penalty` | Not set | Not set | `0` | — | — |
 | `repetition_penalty` | Not set | Not set | `1` | Not set | Not set (text) |
-| `seed` | Not set | Not set | `42` | Not set | `42` (speech) |
+| `seed` | Not set | Not set | Not set | Not set | `42` (speech) |
 | Thinking | `enable_thinking=False` | `enable_thinking=False` | `enable_thinking=False` | Empty `<think>` block prefilled | Empty `<think>` block prefilled |
-| Text output budget | `max_tokens=1024` | `max_tokens=max(512, 3 * len(text))` | `max_tokens` omitted; server selects the cap | `max_new_tokens=2000` per window | `max_new_tokens=1024` |
+| Text output budget | `max_tokens=1024` | `max_tokens=max(512, 3 * len(text))` | `max_tokens=131072` | `max_new_tokens=2000` per window | `max_new_tokens=1024` |
 | Text stop conditions | Not set | Not set | `stop_token_ids=[248044, 248046]`; `ignore_eos=False` | Tokenizer EOS / `<\|im_end\|>` | Tokenizer EOS / `<\|im_end\|>` |
 | Output streaming | No | No | `stream=True` | Sequential window results | Speech `stream=False` |
-| `serve_vllm.sh` context (input + output) | 2B / 9B: `32768`; no 35B preset | `32768` | 2B: `262144`; 9B: `229376` | — | — |
+| `serve_vllm.sh` context (input + output) | 2B / 9B: `32768`; no 35B preset | `32768` | 2B / 9B v1.1: `262144` | — | — |
 | Default language / constraint | Source `auto`, target `en` | Target `en`; `--syllables` required | `zh-en` | `zh-en` | `--lang` required; source inferred as zh/en |
 | Audio window / history | — | — | — | `--max-win 60` seconds; `--ctx-k 5` prior windows | Utterances ≤30 seconds recommended; `chunk=False` |
 | Speech sampler | — | — | — | — | Fixed `sampling=25`; CosyVoice RAS defaults `top_p=0.8`, `top_k=25` |
 | Speech-token budget | — | — | — | — | Maximum `min(1500, 20 * m)`; minimum `2 * m` |
 | Speech speed / sample rate | — | — | — | — | `speed=1.0`; `24000` Hz |
-| Main overrides | `--model`, `--instruction`, `--glossary`, `--temperature`, `--max-tokens` | `--model`, `--syllables`, `--glossary`, `--temperature`, `--max-tokens` | `--model`, `--direction`, `--max-tokens` | `--size`, `--temperature`, `--max-new-tokens`, `--max-win`, `--ctx-k`, `--glossary` | `--model-dir`, `--lang`; lower-level API for budgets / seed |
+| Main overrides | `--model`, `--instruction`, `--glossary`, `--temperature`, `--max-tokens` | `--model`, `--syllables`, `--glossary`, `--temperature`, `--max-tokens` | `--model`, `--direction`, `--source`, `--target`, `--max-tokens`, `--output`, `--base-url` | `--size`, `--temperature`, `--max-new-tokens`, `--max-win`, `--ctx-k`, `--glossary` | `--model-dir`, `--lang`; lower-level API for budgets / seed |
 
+- **NativeLong:** The decoding settings in this column apply to the document client `doc_translate.py`. For custom translation instructions, use `translate.py` locally or `call_api.py` with the public API. The general clients also support `--source`, `--target`, `--instruction`, `--glossary`, `--temperature`, and `--max-tokens`; the public API client supports `--stream`. See the [inference guide](inference/llm/README.md#nativelong-9b-v11).
 - **Text clients:** default to `http://127.0.0.1:8000/v1` with API key `EMPTY`. Use `--base-url` / `--api-key` or `OPENAI_BASE_URL` / `OPENAI_API_KEY`; `--model` overrides `INDEX_MODEL` and the default checkpoint. Serve 35B-A3B manually and select it with `--model IndexTeam/Index-Translate-35B-A3B-preview`.
-- **Budgets:** Homura's `len(text)` is the Python character count after trimming input. NativeLong's omitted `max_tokens` leaves the output cap to the server; context capacity and server limits still apply. Pass a positive `--max-tokens` for an explicit cap. Context includes the full prompt and generated output; override serving limits with `--max-model-len`.
+- **Budgets:** Homura's `len(text)` is the Python character count after trimming input. NativeLong 9B v1.1 supports up to 262,144 tokens for input and output combined. The examples use `--max-tokens 65536` to allow up to 65,536 output tokens; leave enough room for them when sizing the input. Context includes the full prompt and generated output; override serving limits with `--max-model-len`.
 - **Echo S2ST:** `m` is the aligned target-text token count. `sampling=25` is a fixed package-code argument, not a CLI option. The public `DubbingBridgeModel.dub` wrapper exposes neither `seed` nor token budgets; use the lower-level `extract` / `synth` API documented in the [model card](https://huggingface.co/IndexTeam/Index-Echo-S2ST-2B#configurable-api-parameters). `chunk=True` is not implemented.
 - **Scope:** these are usage defaults. The technical report's benchmark decoding and context settings are documented separately in [Evaluation](docs/evaluation.md).
 
@@ -398,17 +409,47 @@ The title is translated while the requested hashtag remains unchanged. [Try text
 
 These three examples meet their targets; syllable control is approximate in general, and spoken duration also depends on delivery. [Try Index-Homura](https://index-translate.bilibili.com/?p=/site/syllable.html&lang=en).
 
-#### 6. Keep a character's name consistent across a document (Index-NativeLong)
+#### 6. NativeLong: full-document translation
 
-In a roughly 32K-token fantasy document, “王妃” is a character's name. The following extracts compare native full-document translation with the same 9B model in a chunked workflow using neighboring context and an automatic glossary.
+**When to use NativeLong:** NativeLong is suited to novels, book chapters, research reports, and other long texts that need to be read as a whole. When a character reappears later, a term is defined earlier, or a sentence depends on another passage, the model can use information from the complete source to shape its translation.
 
-| Source position | Index-NativeLong-9B full document | Same 9B with chunking |
+**9B v1.1** combines this long-document capability with Index-Translate-9B's general multilingual translation and translation instruction following, while improving long-document translation quality. Users can specify terminology, formatting, and style, including additional requirements in some long-document scenarios.
+
+**Name consistency example:**
+
+In a roughly 32K-token fantasy document, an earlier passage says “是王妃导师让我来找你过去一趟” (Mentor Wang Fei sent me to find you). Later, the character calls someone to her office; at 84.8% of the source, “王妃” sees the Holy Spear Knight. The academy setting across these passages identifies “王妃” as the same mentor's name, rather than a royal title. The following extracts compare native full-document translation with the same 9B model in a chunked workflow using neighboring context and an automatic glossary.
+
+| Source position | Index-NativeLong-9B full document | Chunked translation |
 |---|---|---|
 | 31.3% | Mentor Wang Fei | Instructor Wangfei |
 | 56.6% | Wang Fei | the Dean |
 | 84.8% | Wang Fei | The Queen Consort |
 
 Positions are measured by source characters. The full-document output keeps the name at these locations; the demo also shows how an externally supplied glossary can repair the chunked result. [Try Index-NativeLong](https://index-translate.bilibili.com/?p=/site/doc.html&lang=en).
+
+**Preserving concepts defined in context:**
+
+In an existing 9B glacial-history example, the author defines an `ice age` as a whole cold episode that includes short warm periods, then calls the alternating cold and warm phases `glacials` and `interglacials`. The Chinese translation needs to distinguish the whole episode from its phases. These concepts need to be interpreted in the source context; fixed glossary entries alone often cannot capture the distinction.
+
+| Translation method | Actual Chinese translation excerpts |
+|---|---|
+| Index-NativeLong-9B full document | “**冰河时代**”一词应指整个寒冷事件，包括其中的短暂温暖期。……**冰河时代**中冰层的大规模进退，通常分别称为**冰期和间冰期**。 |
+| Qwen3.8-Flash, chunked + automatic glossary | “**冰期**”一词恰当地指代整个寒冷时期，包括其间短暂的温暖阶段。……在一个**冰期**内，大规模冰川推进和消退通常分别被称为**冰期和间冰期**。 |
+
+NativeLong preserves the two levels as “冰河时代” (ice age) and “冰期／间冰期” (glacial/interglacial), instead of using “冰期” for both the whole episode and its cold phase. Ellipses mark text omitted from the excerpts.
+
+**Full-document example: three documents, three calls**
+
+In an existing 9B comparison, we translated three long documents covering glacial history, game fantasy, and industrial relations. Native full-document translation reached the end of each document in one call. The same model's chunked workflow first generated a glossary, then translated individual chunks with context carried between calls and assembled the output.
+
+| Total across three documents | Index-NativeLong-9B full document | Chunked translation |
+|---|---|---|
+| Model calls | 3 | 160 (including automatic glossary generation) |
+| Workflow | Full source → continuous translation | Generate glossary → translate chunks → assemble output |
+
+For books and long articles, NativeLong uses the full source context directly, without a separate process to carry names, terminology, and summaries between chunks.
+
+[API, file translation, and serving guide](inference/llm/README.md#nativelong-9b-v11) · [v1.1 long-document and general translation results](https://huggingface.co/IndexTeam/Index-Nailong-9B#nativelongbench-evaluation)
 
 ## Evaluation
 
@@ -456,9 +497,11 @@ SandGlass overall score and length adherence from the demo; the overall score di
 
 ![Index-NativeLong 64K evaluation](docs/assets/nativelong_benchmark_overview.en.svg)
 
+The NativeLong chart above shows the previous version; See the [v1.1 model card](https://huggingface.co/IndexTeam/Index-Nailong-9B#nativelongbench-evaluation) for updated results.
+
 GuoFeng and BWB Track A3 at 64K Chinese-side tokens.
 
-For the specialized models, Index-Homura-9B reaches **81.92% within 10% of the target syllable count** on SandGlass. Index-NativeLong-9B scores **0.7891 / 0.7683 / 0.8848** on GuoFeng / BWB / Books. The full tables include translation-quality tradeoffs and evaluation notes.
+For the specialized models, Index-Homura-9B reaches **81.92% within 10% of the target syllable count** on SandGlass. For Index-NativeLong-9B v1.1, see the [long-document results and same-batch general translation / instruction-following comparison](https://huggingface.co/IndexTeam/Index-Nailong-9B#nativelongbench-evaluation). The full tables include translation-quality tradeoffs and evaluation notes.
 
 ## Benchmarks
 
